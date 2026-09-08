@@ -1,0 +1,57 @@
+{
+  "version": "1.8.0",
+  "endpoint": "/api/gateway",
+  "request": {
+    "operation": "string",
+    "query": "string|null",
+    "limit": "integer|null",
+    "language": "string|null",
+    "message": "string|null",
+    "history": "array|null"
+  },
+  "operations": [
+    "health",
+    "provider-status",
+    "wiki-search",
+    "research-search",
+    "literature-search",
+    "book-search",
+    "ai-chat"
+  ],
+  "providers": {
+    "wikimedia": {
+      "requires_api_key": false,
+      "upstreams": {
+        "en": "https://en.wikipedia.org/w/rest.php/v1/search/page",
+        "hi": "https://hi.wikipedia.org/w/rest.php/v1/search/page"
+      }
+    },
+    "crossref": {
+      "requires_api_key": false,
+      "upstream": "https://api.crossref.org/v1/works",
+      "notes": "Public REST API; no signup required. This integration uses the public pool with bounded query size/results."
+    },
+    "europepmc": {
+      "requires_api_key": false,
+      "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+      "notes": "Public REST search service; no API key required for this bounded metadata search."
+    },
+    "openlibrary": {
+      "requires_api_key": false,
+      "upstream": "https://openlibrary.org/search.json",
+      "notes": "Free public low-volume Search API; integration requests only bounded fields/results and does not use API credentials."
+    },
+    "gemini": {
+      "requires_api_key": true,
+      "secret_name": "GEMINI_API_KEY",
+      "default_model": "gemini-2.5-flash",
+      "notes": "Server-side REST integration only. The frontend never receives the provider key."
+    }
+  },
+  "security": {
+    "api_keys_in_frontend": false,
+    "provider_secrets_server_only": true,
+    "arbitrary_url_proxy": false,
+    "rate_limit": true
+  }
+}
