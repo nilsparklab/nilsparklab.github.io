@@ -1,0 +1,9 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nil-sparklab-api",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-03",
+  "vars": {
+    "ALLOWED_ORIGIN": "https://nilsparklab.github.io"
+  }
+}
