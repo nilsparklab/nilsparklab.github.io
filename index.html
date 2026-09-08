@@ -824,6 +824,31 @@
   #elab-learning-tools{padding-bottom:76px;}
 }
 </style>
+<style id="elab-v102-content-visibility">
+/* v102: off-screen rendering cost cut for the two long, real card grids
+   in this app — the 198+ component library grid (#components-grid) and
+   the Study/Lessons topic grid (.nil-study-card). content-visibility:auto
+   skips layout/paint work for cards currently scrolled out of view;
+   contain-intrinsic-size reserves an estimated placeholder height so the
+   scrollbar/page doesn't jump as cards enter/exit the viewport. Both
+   properties are simply ignored by browsers that don't support them
+   (safe no-op), so this is a pure progressive enhancement. */
+#components-grid > div{content-visibility:auto;contain-intrinsic-size:auto 260px;}
+.nil-study-card{content-visibility:auto;contain-intrinsic-size:auto 220px;}
+</style>
+<style id="elab-v101-verification-state">
+/* v101: normalized OK/WARNING/ERROR circuit-verification visual state.
+   Applied to the #builder-status status bar as a single authoritative
+   layer on top of the existing NIL SparkLab visual language — no panel
+   redesign, just a subtle border/glow per level. */
+#builder-status{transition:border-color .2s ease,box-shadow .2s ease;border-color:rgba(30,41,59,1);}
+#builder-status.is-verified-ok{border-color:rgba(52,211,153,.55);box-shadow:0 0 0 1px rgba(52,211,153,.12) inset;}
+#builder-status.is-verified-warning{border-color:rgba(252,211,77,.55);box-shadow:0 0 0 1px rgba(252,211,77,.12) inset;}
+#builder-status.is-verified-error{border-color:rgba(244,63,94,.55);box-shadow:0 0 0 1px rgba(244,63,94,.12) inset;}
+#elab-v565-smart-panel.is-verified-ok{border-color:rgba(52,211,153,.35);}
+#elab-v565-smart-panel.is-verified-warning{border-color:rgba(252,211,77,.35);}
+#elab-v565-smart-panel.is-verified-error{border-color:rgba(244,63,94,.35);}
+</style>
 <style id="elab-v576-component-view-style">
 .el-v576-svg{width:178px;height:86px;display:block;overflow:visible}
 .el-v576-wire{stroke:#94a3b8;stroke-width:3;fill:none}
@@ -889,8 +914,14 @@
   --el-transition: 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Soft glass only on major panels */
-header, .bg-slate-900.border, #builder-canvas {
+/* Soft glass only on major panels.
+   NOTE: header intentionally excluded here — it already gets its blur from
+   the lighter Tailwind `.backdrop-blur` utility on the <header> element
+   itself (8px). Applying a second, heavier blur(12px) on top of that was
+   doubling the GPU cost of a sticky element that repaints on every scroll
+   frame, which is what was causing scroll jank. #builder-canvas kept as-is
+   since it isn't sticky/fixed and doesn't repaint on scroll. */
+.bg-slate-900.border, #builder-canvas {
   backdrop-filter: blur(12px) saturate(1.3);
   -webkit-backdrop-filter: blur(12px) saturate(1.3);
 }
@@ -3075,6 +3106,16 @@ textarea:focus-visible,
 /* Header: subtle depth once the page scrolls, purely visual */
 header.elab-scrolled{box-shadow:0 8px 22px rgba(2,6,23,.55)}
 
+/* Perf: drop the header's backdrop-filter while actively scrolling.
+   backdrop-filter on a sticky element forces the browser to recompute the
+   blur every scroll frame — pausing it during motion and restoring it once
+   scrolling settles removes that per-frame cost without any visible change
+   at rest. */
+body.elab-is-scrolling header.sticky{
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+
 /* Nav buttons: smoother hover feedback + underline affordance for the
    currently active section without altering the existing active-state JS */
 .nav-btn{position:relative;transition:color .15s ease,background-color .15s ease,transform .1s ease}
@@ -3341,8 +3382,8 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
 <i class="w-3.5 h-3.5 text-amber-400" data-lucide="award"></i>
 <span data-i18n="progressLabel">Progress:</span> <span class="font-bold text-white" id="progress-val">0%</span>
 </div>
-<button class="hidden flex items-center gap-1.5 px-2.5 py-1 bg-cyan-500 hover:bg-cyan-400 rounded-lg text-[11px] font-mono font-bold text-slate-950 transition whitespace-nowrap" id="btn-install-app" onclick="installElectroLabApp()">
-<i class="w-3.5 h-3.5" data-lucide="download"></i>
+<button class="hidden flex items-center gap-1 px-1.5 py-0.5 bg-cyan-500 hover:bg-cyan-400 rounded-md text-[9px] font-mono font-bold text-slate-950 transition whitespace-nowrap" id="btn-install-app" onclick="installElectroLabApp()">
+<i class="w-2.5 h-2.5" data-lucide="download"></i>
 <span>Install App</span>
 </button>
 <button class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 border border-slate-700 hover:border-cyan-500 rounded-lg text-xs font-mono text-cyan-400 transition" data-elab-action="toggle-lang">
@@ -3802,7 +3843,6 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
 <div class="mt-3 p-3 bg-slate-950 border border-cyan-500/20 rounded-lg" id="elab-v565-smart-panel">
 <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
 <div class="text-[11px] font-black uppercase tracking-wider text-cyan-400">⚡ Smart Circuit Diagnostics</div>
-<button class="px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-md text-[10px] font-bold text-slate-200 hover:border-cyan-400 transition" onclick="runSmartDiagnostics()">Check Circuit</button>
 </div>
 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
 <div class="rounded-md border border-slate-800 bg-slate-900/60 p-2"><div class="text-[8px] text-slate-500 uppercase">Supply</div><div class="text-xs font-bold text-cyan-300 font-mono" id="smart-v">0.00 V</div></div>
@@ -3810,7 +3850,7 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
 <div class="rounded-md border border-slate-800 bg-slate-900/60 p-2"><div class="text-[8px] text-slate-500 uppercase">Power</div><div class="text-xs font-bold text-amber-300 font-mono" id="smart-p">0.00 W</div></div>
 <div class="rounded-md border border-slate-800 bg-slate-900/60 p-2"><div class="text-[8px] text-slate-500 uppercase">Health</div><div class="text-xs font-bold text-slate-300 font-mono" id="smart-health">READY</div></div>
 </div>
-<div class="mt-2 text-[10px] text-slate-400 font-mono leading-relaxed" id="smart-diagnostic-text">Run Check Circuit to scan connections, shorts, open terminals and overload conditions.</div>
+<div class="mt-2 text-[10px] text-slate-400 font-mono leading-relaxed" id="smart-diagnostic-text">Press Simulate to scan connections, shorts, open terminals and overload conditions.</div>
 </div>
 </div>
 </div>
@@ -5982,7 +6022,7 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
       if (viewBtn) viewBtn.innerHTML = globalComponentView === 'symbol'
         ? '<span>🔧</span> Real Connection'
         : '<span>⚡</span> Circuit Symbol';
-      if (isSimRunning) runBuilderSim();
+      if (isSimRunning) runBuilderSim(); else markCircuitVerificationStale();
     }
 
     function redoAction() {
@@ -5997,7 +6037,7 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
       if (viewBtn) viewBtn.innerHTML = globalComponentView === 'symbol'
         ? '<span>🔧</span> Real Connection'
         : '<span>⚡</span> Circuit Symbol';
-      if (isSimRunning) runBuilderSim();
+      if (isSimRunning) runBuilderSim(); else markCircuitVerificationStale();
     }
 
     function toggleWireRouting() {
@@ -6153,6 +6193,7 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
 
       window.ElectroLabBuilderState.addComponent(newComp);
       renderBuilderCanvas();
+      if (isSimRunning) runBuilderSim(); else markCircuitVerificationStale();
     }
 
     function toggleCanvasSwitch(id, event) {
@@ -6163,7 +6204,7 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
       if (comp && ['switch','push_button','reed_switch'].includes(comp.type)) {
         comp.closed = !comp.closed;
         renderBuilderCanvas();
-        if (isSimRunning) runBuilderSim();
+        if (isSimRunning) runBuilderSim(); else markCircuitVerificationStale();
       }
     }
 
@@ -6175,7 +6216,7 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
       if (comp && comp.type === 'logic_input') {
         comp.state = comp.state ? 0 : 1;
         renderBuilderCanvas();
-        if (isSimRunning) runBuilderSim();
+        if (isSimRunning) runBuilderSim(); else markCircuitVerificationStale();
       }
     }
 
@@ -6197,7 +6238,7 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
         comp.r = Math.max(0.01, Number(((comp.wiperPos / 100) * (comp.maxR || 10000)).toFixed(2)));
         const label = document.getElementById(`pot-lbl-${id}`);
         if (label) label.innerText = `${comp.r}Ω / ${comp.maxR || 10000}Ω`;
-        if (isSimRunning) runBuilderSim();
+        if (isSimRunning) runBuilderSim(); else markCircuitVerificationStale();
       }
     }
 
@@ -6979,7 +7020,7 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
         // to the same component instead of silently losing it to the document body.
         const restored = document.getElementById(id);
         if (restored) restored.focus();
-        if (isSimRunning) runBuilderSim();
+        if (isSimRunning) runBuilderSim(); else markCircuitVerificationStale();
       }
     });
 
@@ -7057,7 +7098,7 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
       const duplicate=builderWires.some(w=>(w.from.compId===activeWireStart.compId&&w.from.term===activeWireStart.term&&w.to.compId===compId&&w.to.term===term)||(w.to.compId===activeWireStart.compId&&w.to.term===activeWireStart.term&&w.from.compId===compId&&w.from.term===term));
       if(duplicate){document.getElementById('builder-status-text').innerText='⚠ This exact connection already exists.';cancelWireSelection();return;}
       if(builderWires.length >= 400){document.getElementById('builder-status-text').innerText='⚠ Security limit: maximum 400 wires per circuit.';cancelWireSelection();return;}
-      saveStateForUndo();window.ElectroLabBuilderState.addWires([{id:'w_'+Date.now()+Math.floor(Math.random()*1000),color:currentWireColor,from:activeWireStart,to:{compId,term}}]);activeWireStart=null;document.querySelectorAll('.el-integrated-terminal.wire-anchor').forEach(el=>el.classList.remove('wire-anchor'));renderBuilderCanvas();document.getElementById('builder-status-text').innerText=`✓ Wire connected: [${comp.name||compId}] ${term}. Tap wire to delete.`;runSmartDiagnostics();if(isSimRunning)runBuilderSim();
+      saveStateForUndo();window.ElectroLabBuilderState.addWires([{id:'w_'+Date.now()+Math.floor(Math.random()*1000),color:currentWireColor,from:activeWireStart,to:{compId,term}}]);activeWireStart=null;document.querySelectorAll('.el-integrated-terminal.wire-anchor').forEach(el=>el.classList.remove('wire-anchor'));renderBuilderCanvas();document.getElementById('builder-status-text').innerText=`✓ Wire connected: [${comp.name||compId}] ${term}. Tap wire to delete.`;runSmartDiagnostics();if(isSimRunning)runBuilderSim();else resetVerificationDisplay();
     }
 
     function cancelWireSelection() {
@@ -7077,7 +7118,7 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
       cancelWireSelection();
       renderBuilderCanvas();
       document.getElementById('builder-status-text').innerText = 'All wires cleared. Components kept.';
-      if (isSimRunning) runBuilderSim();
+      if (isSimRunning) runBuilderSim(); else markCircuitVerificationStale();
     }
 
     // v6.00 — Clear entire circuit canvas with the same in-app confirmation UI
@@ -7208,7 +7249,7 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
       drawWires();
       const status = document.getElementById('builder-status-text');
       if (status) status.innerText = '✓ Wire disconnected. Tap two terminals to reconnect it.';
-      if (isSimRunning) runBuilderSim();
+      if (isSimRunning) runBuilderSim(); else markCircuitVerificationStale();
     }
 
     function removeBuilderComp(id) {
@@ -7219,7 +7260,7 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
       window.ElectroLabBuilderState.removeComponent(id);
       if (activeEditingCompId === id && typeof closeEditModal === 'function') closeEditModal();
       renderBuilderCanvas();
-      if (isSimRunning) runBuilderSim();
+      if (isSimRunning) runBuilderSim(); else markCircuitVerificationStale();
       return true;
     }
 
@@ -7355,7 +7396,7 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
 
       closeEditModal();
       renderBuilderCanvas();
-      if (isSimRunning) runBuilderSim();
+      if (isSimRunning) runBuilderSim(); else markCircuitVerificationStale();
     }
 
     function initDraggableProbes() {
@@ -7677,7 +7718,7 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
           "<span class='text-slate-400 font-bold'>⚡ AC Rectifier Path Open:</span> Connect AC L/N through a correctly oriented bridge, then DC+ → load → DC−.",
           "Full-wave bridge path not closed"
         );
-        updateSmartFromSimulation(Number(acSource.v)||0,0,0,'OPEN','AC source detected, but the rectifier/load return path is not closed.');
+        updateSmartFromSimulation(Number(acSource.v)||0,0,0,'OPEN','AC source detected, but the rectifier/load return path is not closed.','ERROR');
         renderBuilderCanvas();
         return;
       }
@@ -7696,7 +7737,7 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
       if(bridge && vrms*Math.SQRT2 > Number(bridge.ratedV||400)){
         isSimRunning=false; safeSound('spark');
         showSimulationStatus(`<span class='text-rose-500 font-bold'>⚠ BRIDGE VOLTAGE RATING EXCEEDED!</span> Peak input is ${(vrms*Math.SQRT2).toFixed(1)} V, above the ${Number(bridge.ratedV||400).toFixed(0)} V rating.`, `Vpeak = ${(vrms*Math.SQRT2).toFixed(1)} V | Rating = ${Number(bridge.ratedV||400).toFixed(0)} V`);
-        updateSmartFromSimulation(vrms,0,0,'CHECK','Bridge rectifier reverse-voltage rating exceeded.');
+        updateSmartFromSimulation(vrms,0,0,'CHECK','Bridge rectifier reverse-voltage rating exceeded.','ERROR');
         renderBuilderCanvas(); return;
       }
       const vdc=Math.max(0,0.9*vrms-bridgeDrop);
@@ -7723,7 +7764,7 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
           "<span class='text-rose-500 font-bold animate-pulse'>💥 Rectifier output short / no current limiting load.</span>",
           "Add a resistor or another valid load on DC+ → DC−"
         );
-        updateSmartFromSimulation(vdc,0,0,'CHECK','Bridge output is closed but the load has no usable current-limiting resistance.');
+        updateSmartFromSimulation(vdc,0,0,'CHECK','Bridge output is closed but the load has no usable current-limiting resistance.','ERROR');
         renderBuilderCanvas();
         return;
       }
@@ -7734,7 +7775,7 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
       if(bridge && currentA > Number(bridge.ratedA || 2)){
         isSimRunning=false; safeSound('spark');
         showSimulationStatus(`<span class='text-rose-500 font-bold animate-pulse'>🛑 BRIDGE OVERCURRENT TRIP!</span> Rectifier current exceeded ${Number(bridge.ratedA||2).toFixed(2)} A.`, `I = ${currentmA.toFixed(0)} mA | Rating = ${Number(bridge.ratedA||2).toFixed(0)} A`);
-        updateSmartFromSimulation(vdc,currentA,vdc*currentA,'CHECK','Bridge rectifier current rating exceeded.');
+        updateSmartFromSimulation(vdc,currentA,vdc*currentA,'CHECK','Bridge rectifier current rating exceeded.','ERROR');
         renderBuilderCanvas(); return;
       }
 
@@ -7745,6 +7786,7 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
           "<span class='text-rose-500 font-bold animate-pulse'>🛑 OVERCURRENT TRIP!</span> Bridge load current exceeded 2.00 A.",
           `I = ${currentmA.toFixed(0)} mA | Limit = 2000 mA`
         );
+        updateSmartFromSimulation(vdc,0,0,'CHECK','Bridge load current exceeded the 2.00 A virtual protection limit.','ERROR');
         renderBuilderCanvas();
         return;
       }
@@ -8063,6 +8105,65 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
       if(el('smart-diagnostic-text')) el('smart-diagnostic-text').innerText=note||'No diagnostic message.';
     }
 
+    /* ============================================================
+       v101: SINGLE NORMALIZED CIRCUIT VERIFICATION STATE
+       ------------------------------------------------------------
+       Every simulation branch ultimately maps into exactly one of
+       three levels: OK / WARNING / ERROR. This section is additive —
+       existing callers of updateSmartFromSimulation(v,i,p,health,note)
+       keep working unchanged (backward compatible), they just now also
+       get consistent color/border/icon treatment and a real "level" on
+       the published telemetry object. Call sites that need to be
+       explicit about a level that the legacy `health` string can't
+       express (e.g. "CHECK" meaning a hard block, not a soft warning)
+       pass an optional 6th `level` argument.
+       ============================================================ */
+    const VERIFICATION_ICONS = { OK: '✔️', WARNING: '⚠️', ERROR: '❌' };
+
+    // Maps the many legacy `health` strings already used across the
+    // simulation branches onto the 3 normalized levels. Anything not
+    // explicitly listed defaults to WARNING (safer than silently OK).
+    function healthToVerificationLevel(health) {
+      switch (String(health || '').toUpperCase()) {
+        case 'OK': return 'OK';
+        case 'CUTOFF': return 'OK'; // a correctly-solved "device is off" state, not an error
+        case 'READY': return null; // neutral / not-yet-simulated — no color state
+        case 'OPEN': return 'ERROR'; // missing conductive path (spec: open circuit = error)
+        case 'CHECK': return 'WARNING'; // default; specific hard-block sites pass level='ERROR' explicitly
+        default: return 'WARNING';
+      }
+    }
+
+    function applyVerificationStateClasses(level) {
+      const classes = ['is-verified-ok', 'is-verified-warning', 'is-verified-error'];
+      const targets = [document.getElementById('builder-status'), document.getElementById('elab-v565-smart-panel')];
+      const cls = level === 'OK' ? 'is-verified-ok' : level === 'WARNING' ? 'is-verified-warning' : level === 'ERROR' ? 'is-verified-error' : null;
+      targets.forEach(t => {
+        if (!t) return;
+        t.classList.remove(...classes);
+        if (cls) t.classList.add(cls);
+      });
+    }
+
+    // Central result-update helper (spec: applyCircuitVerificationResult).
+    // Responsible for #builder-status-text, #builder-calc-stat, #smart-health,
+    // #smart-diagnostic-text, Smart metrics, and the verification CSS state.
+    function applyCircuitVerificationResult(result) {
+      const r = result || {};
+      const level = (r.level === 'OK' || r.level === 'WARNING' || r.level === 'ERROR') ? r.level : healthToVerificationLevel(r.health) || 'WARNING';
+      const icon = r.icon || VERIFICATION_ICONS[level] || '';
+      const colorClass = level === 'OK' ? 'text-emerald-400' : level === 'WARNING' ? 'text-amber-300' : 'text-rose-500';
+      const status = document.getElementById('builder-status-text');
+      if (status && (r.title || r.message)) {
+        status.innerHTML = `<span class="${colorClass} font-bold">${icon} ${r.title || ''}</span>${r.message ? ' ' + r.message : ''}`;
+      }
+      const stat = document.getElementById('builder-calc-stat');
+      if (stat && typeof r.calc === 'string') stat.innerText = r.calc;
+      applyVerificationStateClasses(level);
+      updateSmartFromSimulation(r.voltage || 0, r.current || 0, r.power || 0, level, r.details || r.message || r.title || '', level);
+      return level;
+    }
+
     function runSmartDiagnostics() {
       const comps=Array.isArray(builderCanvasComps)?builderCanvasComps:[], wires=Array.isArray(builderWires)?builderWires:[];
       const issues=[], seen=new Set();
@@ -8106,12 +8207,21 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
         smartP = totalP;
       }
       setSmartMetrics(smartV,smartI,smartP,health,note);
+      // v101: this is a topology-only pre-check that runs at the start of
+      // runBuilderSimCore(), before the real solver executes. Do NOT touch
+      // #builder-status-text here beyond a transient "issues found" note —
+      // the authoritative final status/color for this Simulate run is set
+      // afterwards by whichever branch actually solves (or blocks) the
+      // circuit, via updateSmartFromSimulation()/applyCircuitVerificationResult().
       const status=document.getElementById('builder-status-text');if(status&&issues.length)status.innerHTML=`<span class="text-amber-300 font-bold">⚠ Smart check:</span> ${issues.length} issue${issues.length===1?'':'s'} found.`;
       return {issues,health};
     }
 
-    function updateSmartFromSimulation(v,i,p,health,note){
-      setSmartMetrics(v,i,p,health,note);
+    function updateSmartFromSimulation(v,i,p,health,note,level){
+      const resolvedLevel = (level === 'OK' || level === 'WARNING' || level === 'ERROR') ? level : healthToVerificationLevel(health);
+      const displayHealth = resolvedLevel || String(health || 'READY');
+      setSmartMetrics(v,i,p,displayHealth,note);
+      applyVerificationStateClasses(resolvedLevel);
       // v49: publish the last real Builder simulation telemetry for the Smart Assistant.
       window.NILSparkLabLastSimulation = Object.freeze({
         voltage:Number(v)||0,
@@ -8119,10 +8229,39 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
         power:Number(p)||0,
         health:String(health||'READY'),
         note:String(note||''),
+        // v101: normalized verification level/icon, additive — existing
+        // consumers reading voltage/current/power/health/note/source are
+        // unaffected.
+        level: resolvedLevel || undefined,
+        verificationLevel: resolvedLevel || undefined,
+        verificationIcon: resolvedLevel ? VERIFICATION_ICONS[resolvedLevel] : undefined,
         timestamp:Date.now(),
         source:'builder-simulation'
       });
       try{ window.dispatchEvent(new CustomEvent('nilsparklab:simulation',{detail:window.NILSparkLabLastSimulation})); }catch(_){ }
+    }
+
+    // v101: clears the verification-state color layer and Smart panel back
+    // to a neutral pre-simulation state, WITHOUT touching #builder-status-text
+    // (used where a caller wants to keep its own status message, e.g. after
+    // importing a circuit).
+    function resetVerificationDisplay(){
+      const stat = document.getElementById('builder-calc-stat');
+      if (stat) stat.innerText = '';
+      applyVerificationStateClasses(null);
+      setSmartMetrics(0,0,0,'READY','Press Simulate to scan connections, shorts, open terminals and overload conditions.');
+    }
+
+    // v101: called whenever the circuit is edited (component/wire added,
+    // removed, moved, or a value/switch changed) while it is NOT currently
+    // live-simulating. A previous OK/WARNING/ERROR verification result no
+    // longer applies to the modified circuit, so it is invalidated back to
+    // a neutral "needs Simulate" state rather than left showing stale
+    // green/red text for a circuit that has since changed.
+    function markCircuitVerificationStale(){
+      const status = document.getElementById('builder-status-text');
+      if (status) status.innerHTML = '<span class="text-cyan-300 font-bold">Circuit changed</span> · Simulate to verify';
+      resetVerificationDisplay();
     }
 
     /* STAGE11-BRIDGE-START
@@ -8171,6 +8310,7 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
           isSimRunning = false;
           const first = runtimeCheck.errors[0] || {message:"Invalid simulation input"};
           showSimulationStatus(`<span class="text-rose-400 font-bold">⚠ Simulation input rejected.</span> ${first.message}`, "Simulation blocked — fix invalid circuit data.");
+          updateSmartFromSimulation(0,0,0,'CHECK',first.message||'Invalid simulation input.','ERROR');
           return;
         }
       }
@@ -8248,6 +8388,7 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
           "<span class='text-rose-500 font-bold animate-pulse'>💥 HARD SHORT CIRCUIT!</span> Battery + and − are directly connected. Simulation blocked to protect the virtual source.",
           "I = 0 mA (protected) | Remove the short"
         );
+        updateSmartFromSimulation(loop.battery?.v||0,0,0,'CHECK','Hard short circuit detected. Simulation blocked.','ERROR');
         renderBuilderCanvas();
         return;
       }
@@ -8257,7 +8398,7 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
         SoundEngine.playBeep(400, 0.2);
         document.getElementById('builder-status-text').innerHTML = "<span class='text-amber-400 font-bold'>⚠ No DC Power Source found.</span>";
         document.getElementById('builder-calc-stat').innerText = "";
-        updateSmartFromSimulation(0,0,0,'CHECK','No DC power source detected.');
+        updateSmartFromSimulation(0,0,0,'CHECK','No DC power source detected.','ERROR');
         renderBuilderCanvas();
         return;
       }
@@ -8338,6 +8479,7 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
         isSimRunning = false;
         document.getElementById('builder-status-text').innerHTML = `<span class='text-amber-300 font-bold'>⚠ NPN bias analysis required.</span> This solver recognizes the classic base-resistor + collector-load switch topology (base resistor and collector load both returning to the same rail as the emitter's ground). Connect that pattern, or simplify the network — the solver will not guess conduction for other topologies.`;
         document.getElementById('builder-calc-stat').innerText = `β = ${Number(transistors[0].beta || 100)} | VBE = ${Number(transistors[0].vbe || 0.7).toFixed(2)} V`;
+        updateSmartFromSimulation(loop.battery?.v||0,0,0,'CHECK','NPN bias analysis required — unsupported base/collector topology for the simplified switch solver.','WARNING');
         renderBuilderCanvas();
         return;
       }
@@ -8346,6 +8488,7 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
         isSimRunning = false;
         document.getElementById('builder-status-text').innerHTML = `<span class='text-cyan-300 font-bold'>ℹ Capacitor DC steady-state:</span> capacitor behaves as an open circuit after charging. Use a resistor/switch path and the capacitor will be shown as DC-open.`;
         document.getElementById('builder-calc-stat').innerText = 'DC model: C → open circuit';
+        updateSmartFromSimulation(loop.battery?.v||0,0,0,'CHECK','Capacitor DC steady-state: capacitor behaves as an open circuit after charging.','WARNING');
         renderBuilderCanvas();
         return;
       }
@@ -8367,6 +8510,7 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
           "<span class='text-rose-500 font-bold animate-pulse'>💥 Short Circuit!</span> Closed path has no current-limiting resistance.",
           "I = undefined / excessive current"
         );
+        updateSmartFromSimulation(loop.battery?.v||0,0,0,'CHECK','Hard short circuit detected. Simulation blocked.','ERROR');
         renderBuilderCanvas();
         return;
       }
@@ -8376,6 +8520,7 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
         safeSound('spark');
         document.getElementById('builder-status-text').innerHTML = "<span class='text-rose-500 font-bold animate-pulse'>💥 Semiconductor overload! Add a series resistor.</span>";
         document.getElementById('builder-calc-stat').innerText = "Short-Circuit";
+        updateSmartFromSimulation(loop.battery?.v||0,0,0,'CHECK','Semiconductor overload — LED/diode current-limiting resistance too low. Add a series resistor.','ERROR');
         renderBuilderCanvas();
         return;
       }
@@ -8388,6 +8533,7 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
         SoundEngine.playBeep(500, 0.15);
         document.getElementById('builder-status-text').innerHTML = "<span class='text-amber-400 font-bold'>⚠ Insufficient forward voltage for the LED chain.</span>";
         document.getElementById('builder-calc-stat').innerText = `Vnet = ${netV.toFixed(2)} V | I = 0.00 mA`;
+        updateSmartFromSimulation(loop.battery?.v||0,0,0,'CHECK','Insufficient forward voltage for the LED/diode chain.','WARNING');
         renderBuilderCanvas();
         return;
       }
@@ -8427,6 +8573,7 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
           if (nodal.current > 2) {
             isSimRunning=false; safeSound('spark');
             showSimulationStatus("<span class='text-rose-500 font-bold animate-pulse'>🛑 OVERCURRENT TRIP!</span> Nodal solution exceeded 2.00 A.", `I = ${(nodal.current*1000).toFixed(0)} mA | Limit = 2000 mA`);
+            updateSmartFromSimulation(nodal.V,0,0,'CHECK','Nodal solution exceeded the 2.00 A virtual protection limit.','ERROR');
             renderBuilderCanvas(); return;
           }
           simulationTelemetry = nodal.telemetry;
@@ -8438,6 +8585,7 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
         }
         isSimRunning = false;
         showSimulationStatus("<span class='text-amber-300 font-bold'>⚠ Unsupported branched topology.</span> Use resistors/switches/fuses for automatic nodal solving, or simplify the network.", `Topology: branched | Source = ${(Number(loop.battery.v)||0).toFixed(2)} V`);
+        updateSmartFromSimulation(Number(loop.battery.v)||0,0,0,'CHECK','Unsupported branched topology for the automatic nodal solver.','WARNING');
         renderBuilderCanvas(); return;
       }
 
@@ -8451,6 +8599,7 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
           "<span class='text-rose-500 font-bold animate-pulse'>🛑 OVERCURRENT TRIP!</span> Calculated current exceeded 2.00 A. Virtual protection opened the circuit.",
           `I = ${i_ma.toFixed(0)} mA | Limit = 2000 mA`
         );
+        updateSmartFromSimulation(Number(loop.battery.v)||0,0,0,'CHECK','Calculated current exceeded the 2.00 A virtual protection limit.','ERROR');
         renderBuilderCanvas();
         return;
       }
@@ -8465,9 +8614,14 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
       relays.forEach(r => r.energized = true);
 
       const totalPowerW = (i_ma / 1000) * Math.max(0, Number(loop.battery.v) || 0);
-      const powerWarning = p_res > 500 ? " <span class='text-amber-300'>⚠ High resistor dissipation.</span>" : "";
+      const highDissipation = p_res > 500;
+      const powerWarning = highDissipation ? " <span class='text-amber-300'>⚠ High resistor dissipation.</span>" : "";
       document.getElementById('builder-status-text').innerHTML = `<span class='text-emerald-400 font-bold'>✓ Closed-Loop Verified.</span> Current flowing.${powerWarning}`;
       document.getElementById('builder-calc-stat').innerText = `I = ${i_ma.toFixed(2)} mA | R = ${totalR.toFixed(0)}Ω | P = ${p_res.toFixed(1)} mW | Source = ${totalPowerW.toFixed(2)} W | Direction = ${simulationDirection}`;
+      // v101: real solved telemetry has priority over the topology-only
+      // pre-check that ran earlier in runSmartDiagnostics() — this is the
+      // authoritative final verification result for this Simulate run.
+      updateSmartFromSimulation(Number(loop.battery.v) || 0, currentA, totalPowerW, highDissipation ? 'CHECK' : 'OK', highDissipation ? 'Closed-loop verified, but resistor dissipation is unusually high — check component ratings.' : `Closed DC loop verified. Current flowing normally.`, highDissipation ? 'WARNING' : 'OK');
       renderBuilderCanvas();
       trackProgress(10);
     }
@@ -8643,7 +8797,9 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
             window.ElectroLabBuilderState.replace(checked.value.circuit.components, checked.value.circuit.wires);
             renderBuilderCanvas();
             SoundEngine.playBeep(1400, 0.1);
-            document.getElementById('builder-status-text').innerText = "Circuit JSON imported successfully.";
+            isSimRunning = false;
+            document.getElementById('builder-status-text').innerText = "Circuit JSON imported successfully. Press Simulate to verify.";
+            resetVerificationDisplay();
           } else {
             ElectroLabDialog.alert("JSON file is missing components or wires data.", {title:"Circuit Import Failed", alertdialog:true});
           }
@@ -8665,7 +8821,7 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
       window.ElectroLabBuilderState.clear();
       document.getElementById('builder-preset-select').value = "";
       document.getElementById('builder-status-text').innerText = "Canvas cleared.";
-      document.getElementById('builder-calc-stat').innerText = "";
+      resetVerificationDisplay();
       renderBuilderCanvas();
     }
 
@@ -9790,6 +9946,10 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
     let homeScopeFrame = 0;
     let scopePhase = 0;
     let scopeAnimHandle = null;
+    // v102: tracks whether #scopeCanvas is actually on-screen (its parent
+    // section is not hidden via in-app tab switching, not just browser-tab
+    // visibility). Set by the IntersectionObserver wired up further below.
+    let scopeCanvasVisible = true;
     const HOME_LOAD_R = 470;
     const HOME_LED_VF = 2.0;
 
@@ -10221,7 +10381,7 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
         if (homeScopeFrame % 3 === 0) updateHomeFlow();
         if (homeScopeFrame % 10 === 0) updateHomeTelemetry();
       }
-      if (!document.hidden) {
+      if (!document.hidden && scopeCanvasVisible) {
         scopeAnimHandle = requestAnimationFrame(animateScope);
       } else {
         scopeAnimHandle = null;
@@ -10336,6 +10496,24 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
       applyShadow();
     })();
 
+    // Perf fix: pause the header's backdrop-filter blur while the page is
+    // actively scrolling. backdrop-filter forces a re-blur of everything
+    // behind a sticky element on every scroll frame, which is a common
+    // cause of scroll jank — removing it during motion and restoring it
+    // ~150ms after scrolling stops keeps the visual effect at rest while
+    // eliminating that per-frame GPU cost during the scroll itself.
+    (function elabScrollBlurPause(){
+      let scrollEndTimer = null;
+      const onScroll = () => {
+        document.body.classList.add('elab-is-scrolling');
+        if (scrollEndTimer) clearTimeout(scrollEndTimer);
+        scrollEndTimer = setTimeout(() => {
+          document.body.classList.remove('elab-is-scrolling');
+        }, 150);
+      };
+      window.addEventListener('scroll', onScroll, { passive: true });
+    })();
+
     // PWA: register the service worker so the app shell is cached and the
     // app can be installed / used offline after the first visit.
     if ('serviceWorker' in navigator) {
@@ -10411,10 +10589,33 @@ button.bg-rose-500:hover,button.bg-rose-600:hover{
       if (document.hidden) {
         if (scopeAnimHandle) cancelAnimationFrame(scopeAnimHandle);
         scopeAnimHandle = null;
-      } else if (!scopeAnimHandle) {
+      } else if (!scopeAnimHandle && scopeCanvasVisible) {
         animateScope();
       }
     });
+
+    // v102: also stop the same loop when the Home section itself is
+    // switched away from in-app (showSection() just toggles a `hidden`
+    // class — the browser tab stays visible, so visibilitychange alone
+    // never catches this). IntersectionObserver correctly reports
+    // display:none content as non-intersecting, so this reuses the same
+    // start/stop path as the tab-visibility check above.
+    (function () {
+      const scopeCanvasEl = document.getElementById('scopeCanvas');
+      if (!scopeCanvasEl || typeof IntersectionObserver !== 'function') return;
+      const scopeVisibilityObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          scopeCanvasVisible = entry.isIntersecting;
+          if (!scopeCanvasVisible) {
+            if (scopeAnimHandle) cancelAnimationFrame(scopeAnimHandle);
+            scopeAnimHandle = null;
+          } else if (!document.hidden && !scopeAnimHandle) {
+            animateScope();
+          }
+        });
+      });
+      scopeVisibilityObserver.observe(scopeCanvasEl);
+    })();
   </script>
 <script>
 /* ElectroLab v5.62 — Circuit Analysis & Measurement layer */
@@ -15006,6 +15207,8 @@ window.ElectroLabSecurityClone=function(value){return clean(value,0);};
     if(window.elabSFX) elabSFX.connect();
     if(window.elabV575Toast) elabV575Toast(T("Auto-wired "+added+" links","Auto-wire: "+added+" connections"));
     if(typeof window.runSmartDiagnostics==="function") try{ runSmartDiagnostics(); }catch(e){}
+    if(window.isSimRunning && typeof window.runBuilderSim==="function") window.runBuilderSim();
+    else if(typeof window.markCircuitVerificationStale==="function") try{ markCircuitVerificationStale(); }catch(e){}
   }
   document.getElementById("elab-fab-autowire")?.addEventListener("click", function(){
     if(typeof window.showSection==="function") window.showSection("builder");
