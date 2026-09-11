@@ -156,7 +156,7 @@
   }
 
   function fromBuilder() {
-    const state=window.ElectroLabBuilderState;
+    const state=window.NilSparkLabBuilderState;
     if(!state) throw new Error("Builder state unavailable");
     return normalize({circuitId:"builder-current",components:state.components,wires:state.wires});
   }
