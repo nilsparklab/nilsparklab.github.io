@@ -316,7 +316,7 @@
 })();
 </script>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; frame-src 'self'; img-src 'self' https://api.qrserver.com data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' https: data:; script-src 'self' 'unsafe-inline' https://unpkg.com; connect-src 'self' https://*.workers.dev; media-src 'self' https: blob:; worker-src 'self' blob:; upgrade-insecure-requests"/>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; frame-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' https: data:; script-src 'self' 'unsafe-inline' https://unpkg.com; connect-src 'self' https://*.workers.dev; media-src 'self' https: blob:; worker-src 'self' blob:; upgrade-insecure-requests"/>
 <style id="nsl-dialog-core-style">
 .nsl-dialog-backdrop{position:fixed;inset:0;z-index:2147483646;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(2,6,23,.72);backdrop-filter:blur(13px) saturate(120%);-webkit-backdrop-filter:blur(13px) saturate(120%);animation:nslDialogFade .16s ease-out}
 .nsl-dialog-card{width:min(460px,calc(100vw - 28px));max-height:min(88vh,650px);overflow:auto;background:linear-gradient(180deg,rgba(15,23,42,.98),rgba(5,11,27,.99));color:#e2e8f0;border:1px solid rgba(34,211,238,.22);border-radius:20px;box-shadow:0 30px 90px rgba(0,0,0,.62),0 0 0 1px rgba(15,23,42,.8),0 0 34px rgba(34,211,238,.06);padding:0;font-family:inherit;animation:nslDialogIn .2s cubic-bezier(.22,1,.36,1)}
@@ -861,7 +861,15 @@ box-shadow:0 0 0 4px rgba(250,204,21,.16),0 0 16px rgba(250,204,21,.5);
 --el-glow: 0 0 20px rgba(34, 211, 238, 0.22);
 --el-transition: 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.bg-slate-900.border, #builder-canvas {
+/* v109 — perf fix: this rule was meant to give only the Builder canvas
+   a frosted-glass look, but the selector also matched the generic
+   `.bg-slate-900.border` utility-class combo used by ~80 ordinary
+   cards across Home and other sections. backdrop-filter is expensive
+   to composite, so every one of those cards was forcing a GPU blur
+   pass on every scroll frame — a major source of page-wide scroll
+   jank. Scoped to #builder-canvas only, which is the only place the
+   glass effect was ever intended to show. */
+#builder-canvas {
 backdrop-filter: blur(12px) saturate(1.3);
 -webkit-backdrop-filter: blur(12px) saturate(1.3);
 }
@@ -3000,6 +3008,21 @@ body.nsl-is-scrolling #current-trace,
 #current-trace.nsl-flow-offscreen{
 animation-play-state:paused!important;
 filter:none!important;
+}
+/* v109b — perf fix: same issue as #current-trace above, but for the
+   Builder's per-wire "current flow" indicators. Once Simulate is run,
+   every connected wire gets an infinite stroke-dashoffset animation
+   (.animate-flow-fwd/-rev) to show current direction. Animating
+   stroke-dashoffset on an SVG path cannot be GPU-composited — it forces
+   a repaint of that path every ~16ms for as long as the simulation is
+   running. With several wires animating at once this competes with the
+   scroll thread and is the main cause of lag while scrolling a page
+   that has an active simulation. Pausing during active scroll (resumes
+   automatically once scrolling stops) removes that cost without
+   changing how the animation looks at rest. */
+body.nsl-is-scrolling .animate-flow-fwd,
+body.nsl-is-scrolling .animate-flow-rev{
+animation-play-state:paused!important;
 }
 /* v100 — perf fix: skip rendering work for off-screen component cards
    (189 items in #components-grid). content-visibility:auto tells the
@@ -19489,7 +19512,19 @@ box-shadow:0 20px 40px rgba(0,0,0,.4)
       return;
     }
     var img=document.getElementById("nsl-qr-img");
-    img.src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data="+encodeURIComponent(url);
+    // Generated fully client-side (vendored js/vendor/qrcode.min.js) — the
+    // share URL / circuit data never leaves the browser or hits a third-party API.
+    try{
+      if(typeof qrcode!=="function") throw new Error("qrcode lib unavailable");
+      var qr=qrcode(0,"M");
+      qr.addData(url);
+      qr.make();
+      img.src=qr.createDataURL(6,12);
+      img.removeAttribute("width"); img.removeAttribute("height");
+    }catch(e){
+      img.removeAttribute("src");
+      if(window.nslV575Toast) nslV575Toast(T("Link is too long to render as a QR code","Link QR code ke liye bahut lamba hai"));
+    }
     document.getElementById("nsl-qr-hint").textContent = url.slice(0,64)+(url.length>64?"…":"");
     var m=document.getElementById("nsl-qr-modal");
     m.classList.add("open"); m.setAttribute("aria-hidden","false");
@@ -25468,6 +25503,8 @@ window.NilSparkLabSafeWifiV1013={
 #nsl-v1022-diagram-library .libcard:hover{border-color:rgba(34,211,238,.7);background:#0e1c31;transform:translateY(-1px)}
 #nsl-v1022-diagram-library .libcard b{display:block;font-size:12px;color:#e2e8f0}
 #nsl-v1022-diagram-library .libcard span{display:block;font-size:9px;color:#64748b;margin-top:4px}
+#nsl-v1022-diagram-library .libcard-unbuildable{border-color:rgba(251,191,36,.3)}
+#nsl-v1022-diagram-library .libcard-unbuildable span{color:#fbbf24}
 #nsl-v1022-diagram-library .libsection{margin-top:13px;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#67e8f9}
 #nsl-v1022-diagram-library .libupload{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-top:9px;padding:10px;border:1px dashed rgba(34,211,238,.28);border-radius:12px;background:rgba(34,211,238,.04)}
 #nsl-v1022-diagram-library .libupload label,#nsl-v1022-diagram-library .libupload button{border:1px solid rgba(34,211,238,.3);background:#0f172a;color:#67e8f9;border-radius:8px;padding:7px 10px;font-size:10px;font-weight:700;cursor:pointer}
@@ -25586,18 +25623,59 @@ window.NilSparkLabSafeWifiV1013={
     var explain=(m&&m[0])||'This diagram is intended as a visual learning reference. Inspect the connection path and component roles before building it.';
     var comps=(m&&m[1])||[];
     var caution=(m&&m[2])||'Verify component ratings and terminal connections before running a practical circuit.';
+
+    /* v1031: know BEFORE rendering the button whether this diagram actually
+       has a Builder recipe. Previously the button always said "Build this
+       circuit" and only revealed an unsupported-diagram failure via a toast
+       that auto-hides in 2.2s — easy to miss, so it looked like the button
+       silently did nothing. Now we check ahead of time and are upfront
+       about it, both in the NEXT STEP copy and on the button itself. */
+    var buildKey=(forcedTitle||title);
+    var buildOk=null, buildReason=null;
+    try{
+      if(window.NilSparkLabDiagramBuilderV1030 && typeof window.NilSparkLabDiagramBuilderV1030.resolve==='function'){
+        buildOk=!!window.NilSparkLabDiagramBuilderV1030.resolve(buildKey);
+        if(!buildOk){
+          var u=window.NilSparkLabDiagramBuilderV1030.unsupported||{};
+          buildReason=u[String(buildKey||'').toLowerCase().trim()]||'The current Builder has no matching recipe for this diagram yet.';
+        }
+      }
+    }catch(_){ }
+
     var grid=document.createElement('div');grid.className='workflowgrid';
     var info=document.createElement('div');info.className='infocard';info.innerHTML='<h3>💡 HOW IT WORKS</h3><p>'+escapeHtml(explain)+'</p><h3 style="margin-top:9px">🧩 COMPONENTS</h3><ul>'+comps.map(function(x){return '<li>'+escapeHtml(x)+'</li>';}).join('')+'</ul>';
-    var learn=document.createElement('div');learn.className='infocard';learn.innerHTML='<h3>⚠ PRACTICE NOTE</h3><p>'+escapeHtml(caution)+'</p><h3 style="margin-top:9px">NEXT STEP</h3><p>Open the Builder to recreate the circuit, then run the simulation and inspect the result.</p>';
+    var nextStepHtml=(buildOk===false)
+      ? '<p><b>⚠ Not yet buildable:</b> '+escapeHtml(buildReason)+'</p>'
+      : '<p>Open the Builder to recreate the circuit, then run the simulation and inspect the result.</p>';
+    var learn=document.createElement('div');learn.className='infocard';learn.innerHTML='<h3>⚠ PRACTICE NOTE</h3><p>'+escapeHtml(caution)+'</p><h3 style="margin-top:9px">NEXT STEP</h3>'+nextStepHtml;
     grid.appendChild(info);grid.appendChild(learn);
     var actions=document.createElement('div');actions.className='actionrow';
-    var bld=document.createElement('button');bld.type='button';bld.className='primary';bld.textContent='🧰 Build this circuit';bld.onclick=function(){
+    var bld=document.createElement('button');bld.type='button';
+    if(buildOk===false){
+      bld.className='secondary';bld.textContent='⚠ Not buildable yet';
+    }else{
+      bld.className='primary';bld.textContent='🧰 Build this circuit';
+    }
+    bld.onclick=function(){
+      if(buildOk===false){
+        var msg=buildReason||'The current Builder has no matching recipe for this diagram yet.';
+        if(window.NilSparkLabDialog && typeof window.NilSparkLabDialog.alert==='function'){
+          window.NilSparkLabDialog.alert(msg,{title:'Not buildable yet',kicker:'Diagram Library'});
+        }else{
+          toast(msg);
+        }
+        return;
+      }
       modal.remove();
       if(window.NilSparkLabDiagramBuilderV1030 && typeof window.NilSparkLabDiagramBuilderV1030.build==='function'){
         window.NilSparkLabDiagramBuilderV1030.build(title);
       }else{
         goBuilder();
-        toast('Builder handoff is not ready.');
+        if(window.NilSparkLabDialog && typeof window.NilSparkLabDialog.alert==='function'){
+          window.NilSparkLabDialog.alert('The Builder handoff module has not finished loading yet. Please wait a moment and try again.',{title:'Builder handoff is not ready',kicker:'Diagram Library'});
+        }else{
+          toast('Builder handoff is not ready.');
+        }
       }
     };
     var sim=document.createElement('button');sim.type='button';sim.className='simulate';sim.textContent='▶ Simulate';sim.onclick=function(){modal.remove();goSimulate();};
@@ -25627,7 +25705,19 @@ window.NilSparkLabSafeWifiV1013={
     var customGrid=document.createElement('div');customGrid.className='libgrid';box.appendChild(customGrid);
     var note=document.createElement('div');note.className='libnote';note.textContent='Raster images only: PNG/JPG/WebP. SVG upload is intentionally blocked for safety. Custom references are view-only; built-in diagrams support the full Learn → Build → Simulate workflow.';box.appendChild(note);
     modal.appendChild(box);document.body.appendChild(modal);
-    function renderBuiltins(filter){grid.innerHTML='';var f=String(filter||'').toLowerCase().trim();var shown=0;builtins.forEach(function(item){if(f&&item[0].toLowerCase().indexOf(f)<0&&item[2].toLowerCase().indexOf(f)<0&&item[1].toLowerCase().indexOf(f)<0)return;shown++;var c=document.createElement('button');c.type='button';c.className='libcard';c.innerHTML='<b>'+escapeHtml(item[0])+'</b><span>'+escapeHtml(item[2])+'</span>';c.onclick=function(){modal.remove();renderDiagram(item[1],item[0],!!fromAssistant);};grid.appendChild(c);});if(!shown){grid.innerHTML='<div style="grid-column:1/-1;font:11px Arial;color:#64748b;padding:10px">No matching diagram. Try a simpler keyword.</div>';}}
+    function renderBuiltins(filter){grid.innerHTML='';var f=String(filter||'').toLowerCase().trim();var shown=0;builtins.forEach(function(item){if(f&&item[0].toLowerCase().indexOf(f)<0&&item[2].toLowerCase().indexOf(f)<0&&item[1].toLowerCase().indexOf(f)<0)return;shown++;var c=document.createElement('button');c.type='button';c.className='libcard';
+      /* v1031: surface "not yet buildable in Builder" at a glance on the card
+         itself, instead of only after opening the diagram and pressing the
+         button. */
+      var buildable=true;
+      try{
+        if(window.NilSparkLabDiagramBuilderV1030 && typeof window.NilSparkLabDiagramBuilderV1030.resolve==='function'){
+          buildable=!!window.NilSparkLabDiagramBuilderV1030.resolve(item[0]);
+        }
+      }catch(_){ }
+      c.innerHTML='<b>'+escapeHtml(item[0])+'</b><span>'+escapeHtml(item[2])+(buildable?'':' · not yet buildable')+'</span>';
+      if(!buildable) c.classList.add('libcard-unbuildable');
+      c.onclick=function(){modal.remove();renderDiagram(item[1],item[0],!!fromAssistant);};grid.appendChild(c);});if(!shown){grid.innerHTML='<div style="grid-column:1/-1;font:11px Arial;color:#64748b;padding:10px">No matching diagram. Try a simpler keyword.</div>';}}
     function renderCustom(){customGrid.innerHTML='';if(!custom.length){customGrid.style.display='none';return;}customGrid.style.display='grid';custom.forEach(function(x){var c=document.createElement('button');c.type='button';c.className='libcard';c.innerHTML='<b>'+escapeHtml(x.name)+'</b><span>Custom reference • view only</span>';c.onclick=function(){var v=document.createElement('div');v.id='nsl-v1022-custom-view';v.style.display='block';v.innerHTML='';var im=document.createElement('img');im.src=x.url;im.alt=x.name;v.appendChild(im);box.appendChild(v);v.scrollIntoView({behavior:'smooth',block:'center'});};customGrid.appendChild(c);});}
     search.addEventListener('input',function(){renderBuiltins(search.value);});
     clear.onclick=function(){custom=[];renderCustom();status.textContent='Uploads cleared for this session.';};
@@ -26216,7 +26306,7 @@ window.NilSparkLabSafeWifiV1013={
     function check(){
       attempts++;
       if(builderReady()){ done(); return; }
-      if(attempts>=60){ toast("Builder is not ready. Automatic build cancelled."); return; }
+      if(attempts>=60){ announce("Builder is not ready. Automatic build cancelled.","Build failed"); return; }
       requestAnimationFrame(check);
     }
     check();
@@ -26256,17 +26346,31 @@ window.NilSparkLabSafeWifiV1013={
     return {cards,groups};
   }
 
+  /* v1031: a 2.2s auto-hiding bottom toast is easy to miss — especially
+     right after a modal just closed and the page is scrolling/re-laying-out.
+     For anything the person needs to actually notice (a build that failed,
+     or one that can never succeed), also show it in the persistent
+     confirm/alert dialog when available, in addition to the toast. */
+  function announce(message,title){
+    toast(message);
+    try{
+      if(window.NilSparkLabDialog && typeof window.NilSparkLabDialog.alert==="function"){
+        window.NilSparkLabDialog.alert(message,{title:title||"Circuit Builder",kicker:"Diagram → Builder"});
+      }
+    }catch(_){ }
+  }
+
   function buildDiagramInBuilder(input){
     const key=resolveDiagramKey(input);
     if(!key){
       const reason=UNSUPPORTED[norm(input)] || "No authoritative Builder recipe exists in the current file.";
-      toast(`Unsupported diagram: ${input}. ${reason}`);
+      announce(`Unsupported diagram: ${input}. ${reason}`,"Not buildable yet");
       return false;
     }
     const recipe=RECIPES[key];
     if(!recipe) return false;
 
-    if(!openBuilder()){ toast("Builder section could not be opened."); return false; }
+    if(!openBuilder()){ announce("Builder section could not be opened.","Build failed"); return false; }
 
     waitForBuilderReady(()=>{
       try{
@@ -26322,7 +26426,7 @@ window.NilSparkLabSafeWifiV1013={
         try{resetBuilder();}catch(_){}
         const st=document.getElementById("builder-status-text");
         if(st) st.innerText=`✕ Failed to build ${recipe.title} in Builder.`;
-        toast(`Failed to build ${recipe.title} in Builder: ${err.message||err}`);
+        announce(`Failed to build ${recipe.title} in Builder: ${err.message||err}`,"Build failed");
       }
     });
     return true;
@@ -26339,6 +26443,7 @@ window.NilSparkLabSafeWifiV1013={
 
 })();
 </script>
+<script src="js/vendor/qrcode.min.js"></script>
 <script src="js/api/api-config.js"></script>
 <script src="js/api/api-response.js"></script>
 <script src="js/api/api-client.js"></script>
