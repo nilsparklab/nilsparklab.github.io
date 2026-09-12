@@ -3,8 +3,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta content="1.01" name="application-version"/>
-<meta content="v1.01" name="application-release"/>
+<meta content="11.0" name="application-version"/>
+<meta content="v11.0" name="application-release"/>
 <script id="nsl-v64-security-audit">
 (() => {
   "use strict";
@@ -3166,7 +3166,54 @@ animation:nslHeroIn .5s cubic-bezier(.22,1,.36,1) both;
 }
 </style>
 <meta content="summary_large_image" name="twitter:card"/><meta content="https://nilsparklab.github.io/assets/seo/og-image.png" name="twitter:image"/></head>
-<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col selection:bg-cyan-500 selection:text-black" data-nil-sparklab-version="11.0" data-nil-sparklab-release="v1.01">
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col selection:bg-cyan-500 selection:text-black" data-nil-sparklab-version="11.0" data-nil-sparklab-release="v11.0">
+<div id="nsl-preloader" aria-hidden="true" style="position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#020617;transition:opacity .35s ease;">
+<div style="width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,#22d3ee,#2563eb);display:flex;align-items:center;justify-content:center;box-shadow:0 0 40px rgba(34,211,238,.35);animation:nslPreloaderPulse 1.4s ease-in-out infinite;">
+<svg width="28" height="28" viewBox="0 0 24 24" fill="#020617"><path d="M13 2 3 14h7l-1 8 11-14h-7l1-6z"/></svg>
+</div>
+<div style="font-family:'Space Grotesk',ui-sans-serif,system-ui,sans-serif;font-weight:700;color:#e2e8f0;font-size:15px;letter-spacing:.02em;">NIL SparkLab</div>
+<div style="width:120px;height:3px;border-radius:99px;background:#1e293b;overflow:hidden;">
+<div style="width:40%;height:100%;background:linear-gradient(90deg,#22d3ee,#2563eb);border-radius:99px;animation:nslPreloaderBar 1.1s ease-in-out infinite;"></div>
+</div>
+</div>
+<style>
+@keyframes nslPreloaderPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes nslPreloaderBar{0%{transform:translateX(-120%)}100%{transform:translateX(340%)}}
+</style>
+<script>
+(function(){
+  "use strict";
+  function hidePreloader(){
+    var el=document.getElementById('nsl-preloader');
+    if(!el) return;
+    el.style.opacity='0';
+    setTimeout(function(){ if(el&&el.parentNode) el.parentNode.removeChild(el); }, 400);
+  }
+  if(document.readyState==='complete'||document.readyState==='interactive'){
+    setTimeout(hidePreloader, 250);
+  } else {
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(hidePreloader, 250); });
+  }
+  /* Safety net: never let a slow/blocked resource keep this on screen forever. */
+  setTimeout(hidePreloader, 6000);
+})();
+</script>
+<div id="nsl-offline-banner" role="status" aria-live="polite" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9998;background:#78350f;color:#fef3c7;font-size:12px;font-weight:600;text-align:center;padding:7px 12px;font-family:'Inter',ui-sans-serif,system-ui,sans-serif;">
+⚠ You're offline — Circuit Builder, Components &amp; Quizzes still work. Smart Assistant/Search needs internet.
+</div>
+<script>
+(function(){
+  "use strict";
+  var banner=document.getElementById('nsl-offline-banner');
+  function render(){
+    if(!banner) return;
+    banner.style.display = navigator.onLine ? 'none' : 'block';
+  }
+  window.addEventListener('online', render);
+  window.addEventListener('offline', render);
+  render();
+})();
+</script>
 <script id="nsl-v103-panel-autoclose">
 (function(){
   "use strict";
@@ -3559,6 +3606,9 @@ Interactive Circuit Builder Sandbox
 </select>
 <button class="px-3 py-2 bg-slate-800 text-cyan-300 border border-slate-700 hover:border-cyan-500 rounded-lg text-xs font-mono transition flex items-center gap-1.5" onclick="exportCircuitPNG()" title="Download High-Res PNG Image">
 <i class="w-3.5 h-3.5" data-lucide="camera"></i> PNG
+</button>
+<button class="px-3 py-2 bg-slate-800 text-emerald-300 border border-slate-700 hover:border-emerald-500 rounded-lg text-xs font-mono transition flex items-center gap-1.5" onclick="shareCircuitPNG()" title="Share this circuit">
+<i class="w-3.5 h-3.5" data-lucide="share-2"></i> Share
 </button>
 <button class="px-3 py-2 bg-slate-800 text-slate-200 border border-slate-700 rounded-lg text-xs font-mono hover:bg-slate-700 transition flex items-center gap-1.5" onclick="exportCircuitJSON()">
 <i class="w-3.5 h-3.5" data-lucide="save"></i> JSON
@@ -8752,6 +8802,11 @@ Score: <span class="font-bold" id="quiz-score">0</span>
 
     function exportCircuitPNG() {
       safeSound('click');
+      const dataUrl = buildCircuitExportCanvas().toDataURL('image/png');
+      const a=document.createElement('a'); a.href=dataUrl; a.download=`NilSparkLab_v5.55_Schematic_${Date.now()}.png`; a.click();
+    }
+
+    function buildCircuitExportCanvas() {
       const canvasEl = document.getElementById('builder-canvas');
       const rect = canvasEl.getBoundingClientRect();
       const scale = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
@@ -8783,7 +8838,26 @@ Score: <span class="font-bold" id="quiz-score">0</span>
         if(c.type==='led') ctx.fillText(c.isOn?'ON':'OFF',0,14);
         ctx.restore();
       });
-      const a=document.createElement('a'); a.href=exportCanvas.toDataURL('image/png'); a.download=`NilSparkLab_v5.55_Schematic_${Date.now()}.png`; a.click();
+      return exportCanvas;
+    }
+
+    function shareCircuitPNG() {
+      safeSound('click');
+      const finish = () => { try { buildCircuitExportCanvas().toBlob(blob => {
+        if (!blob) { toast('Could not prepare the circuit image.'); return; }
+        const file = new File([blob], `NilSparkLab_Circuit_${Date.now()}.png`, { type: 'image/png' });
+        const shareData = { files: [file], title: 'NIL SparkLab Circuit', text: 'Check out this circuit I built in NIL SparkLab!' };
+        if (navigator.canShare && navigator.canShare(shareData) && navigator.share) {
+          navigator.share(shareData).catch(() => {});
+        } else {
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = file.name;
+          a.click();
+          toast('Sharing is not supported on this browser — image downloaded instead. You can attach it to WhatsApp/Email manually.');
+        }
+      }, 'image/png'); } catch (_) { toast('Could not share the circuit.'); } };
+      finish();
     }
 
     function exportCircuitJSON() {
@@ -26568,7 +26642,11 @@ window.NilSparkLabSafeWifiV1013={
         const st=document.getElementById("builder-status-text");
         if(st) st.innerText=`✓ ${recipe.title} built automatically · ${stateCheck.components} components · ${stateCheck.wires} wires`;
 
-        try{window.scrollTo({top:0,behavior:"smooth"});}catch(_){}
+        try{
+          var canvasEl=document.getElementById("builder-canvas");
+          if(canvasEl && canvasEl.scrollIntoView) canvasEl.scrollIntoView({behavior:"smooth",block:"center"});
+          else window.scrollTo({top:0,behavior:"smooth"});
+        }catch(_){}
         toast(`${recipe.title} built automatically in Builder.`);
         window.dispatchEvent(new CustomEvent("nilsparklab:diagram-builder-built",{detail:{
           key,components:stateCheck.components,wires:stateCheck.wires,visibleComponents:visibleCheck.cards,visibleWires:visibleCheck.groups
@@ -26594,6 +26672,12 @@ window.NilSparkLabSafeWifiV1013={
   });
 
 })();
+</script>
+<script>
+  /* Set your deployed Cloudflare Worker URL here after running `wrangler deploy`.
+     This is a PUBLIC url, not a secret. Example:
+     window.NIL_SPARKLAB_API_BASE = 'https://nil-sparklab-api-prod.YOUR-SUBDOMAIN.workers.dev'; */
+  // window.NIL_SPARKLAB_API_BASE = 'PASTE_YOUR_WORKER_URL_HERE';
 </script>
 <script src="js/vendor/qrcode.min.js"></script>
 <script src="js/api/api-config.js"></script>
@@ -27901,7 +27985,25 @@ color:#5b6b84;
 <span>© 2026 NIL SparkLab</span>
 <span class="nsl-site-footer-sep">·</span>
 <span>Learn · Build · Simulate · Troubleshoot</span>
+<span class="nsl-site-footer-sep">·</span>
+<span id="nsl-footer-version"></span>
+<span class="nsl-site-footer-sep">·</span>
+<a href="/privacy/" style="color:inherit;text-decoration:underline">Privacy Policy</a>
+<span class="nsl-site-footer-sep">·</span>
+<a href="/terms/" style="color:inherit;text-decoration:underline">Terms of Service</a>
 </div>
 </footer>
+<script>
+  /* Single source of truth for the visible version badge: reads the same
+     frozen config object used by the Lab Report / project save format
+     (js/config/app-config.js), so this never drifts out of sync again. */
+  (function () {
+    try {
+      var el = document.getElementById('nsl-footer-version');
+      var v = (window.NilSparkLabConfig && window.NilSparkLabConfig.version) || '';
+      if (el && v) el.textContent = 'v' + v;
+    } catch (_) {}
+  })();
+</script>
 </body>
 </html>
