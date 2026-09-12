@@ -1,0 +1,31 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nil-sparklab-api",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-03",
+  "vars": {
+    "ALLOWED_ORIGIN": "https://nilsparklab.github.io"
+  },
+  "ratelimits": [
+    {
+      "name": "GENERAL_RATE_LIMITER",
+      // Unique per Cloudflare account. Keep dev/staging separate from
+      // production (see wrangler.production.jsonc) so their counts don't mix.
+      "namespace_id": "1001",
+      "simple": { "limit": 60, "period": 60 }
+    },
+    {
+      "name": "AI_RATE_LIMITER",
+      "namespace_id": "1002",
+      "simple": { "limit": 10, "period": 60 }
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "AI_DAILY_QUOTA",
+      // Run `npx wrangler kv namespace create AI_DAILY_QUOTA` and paste the
+      // returned id here before deploying — this is a placeholder.
+      "id": "REPLACE_WITH_DEV_KV_NAMESPACE_ID"
+    }
+  ]
+}
