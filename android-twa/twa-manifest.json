@@ -1,0 +1,21 @@
+{
+  "packageId": "in.nilsparklab.app",
+  "host": "nilsparklab.github.io",
+  "name": "NIL SparkLab",
+  "launcherName": "SparkLab",
+  "display": "standalone",
+  "themeColor": "#0891b2",
+  "navigationColor": "#0891b2",
+  "navigationColorDark": "#020617",
+  "backgroundColor": "#020617",
+  "enableNotifications": false,
+  "startUrl": "/",
+  "iconUrl": "https://nilsparklab.github.io/icons/icon-512.png",
+  "maskableIconUrl": "https://nilsparklab.github.io/icons/icon-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://nilsparklab.github.io/manifest.json"
+}
