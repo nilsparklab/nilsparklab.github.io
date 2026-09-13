@@ -344,6 +344,16 @@
 @keyframes nslDialogIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
 @media (prefers-reduced-motion:reduce){.nsl-dialog-backdrop,.nsl-dialog-card{animation:none}.nsl-dialog-actions button{transition:none}}
 @media(max-width:480px){.nsl-dialog-backdrop{padding:10px}.nsl-dialog-card{width:100%;border-radius:18px}.nsl-dialog-head{padding:16px 16px 13px}.nsl-dialog-body{padding:14px 16px 2px}.nsl-dialog-actions{padding:12px 16px 16px}.nsl-dialog-actions button{flex:1;min-width:0}}
+/* v5.65: instant tap feedback on Share, independent of how long the
+   async capture/share-sheet work takes underneath it. */
+#nsl-share-btn{ transition: transform .12s ease, background-color .15s ease; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+#nsl-share-btn:active{ transform: scale(.92); }
+#nsl-share-btn.nsl-pulse{ animation: nslSharePulse .32s ease; }
+@keyframes nslSharePulse{
+  0%{ transform: scale(1); }
+  35%{ transform: scale(.88); background-color: rgba(16,185,129,.18); }
+  100%{ transform: scale(1); }
+}
 </style>
 <script id="nsl-dialog-core">
 (function(){
@@ -3741,7 +3751,7 @@ Interactive Circuit Builder Sandbox
 <button class="px-3 py-2 bg-slate-800 text-cyan-300 border border-slate-700 hover:border-cyan-500 rounded-lg text-xs font-mono transition flex items-center gap-1.5" onclick="exportCircuitJSON()" title="Export circuit as a JSON file — reimport it anywhere with components and wires intact">
 <i class="w-3.5 h-3.5" data-lucide="save"></i> Export
 </button>
-<button class="px-3 py-2 bg-slate-800 text-emerald-300 border border-slate-700 hover:border-emerald-500 rounded-lg text-xs font-mono transition flex items-center gap-1.5" onclick="shareCircuitPNG()" title="Share this circuit">
+<button id="nsl-share-btn" class="px-3 py-2 bg-slate-800 text-emerald-300 border border-slate-700 hover:border-emerald-500 rounded-lg text-xs font-mono transition flex items-center gap-1.5" onclick="shareCircuitPNG()" title="Share this circuit">
 <i class="w-3.5 h-3.5" data-lucide="share-2"></i> Share
 </button>
 </div>
@@ -5856,6 +5866,11 @@ Score: <span class="font-bold" id="quiz-score">0</span>
       if(addHint) addHint.textContent=builderAddMap[currentSelectedComp.id] ? 'Adds a new component to the sandbox.' : (modalAction ? 'Opens the implemented dedicated lab/tool for this component.' : (modalCap && (modalCap.industrialLab || modalCap.instrumentLab || modalCap.dedicatedLab) ? 'Dedicated-lab classification exists, but this specific tool has no implemented launcher yet.' : 'Documentation view only.'));
       setModalVisualView('real');
       document.getElementById('comp-modal').classList.remove('hidden');
+      // Reuses the same page-scroll-lock class as the Assistant panel so the
+      // Component Directory list behind this modal can't be scrolled while
+      // it's open (the modal itself already scrolls its own content).
+      document.documentElement.classList.add('nsl-sa-lock');
+      document.body.classList.add('nsl-sa-lock');
       if (modalWasHidden) {
         history.pushState({ section: (history.state && history.state.section) || 'components', compModal: true }, '', '#components');
       }
@@ -5893,6 +5908,8 @@ Score: <span class="font-bold" id="quiz-score">0</span>
         history.back();
       } else {
         modalEl.classList.add('hidden');
+        document.documentElement.classList.remove('nsl-sa-lock');
+        document.body.classList.remove('nsl-sa-lock');
       }
     }
 
@@ -7184,12 +7201,24 @@ Score: <span class="font-bold" id="quiz-score">0</span>
       };
     }
 
+    function getBendKey(coord) {
+      // Buckets nearby bend coordinates together so wires whose bend
+      // lines are only a couple px apart still get treated as "the same
+      // line" for overlap-offset purposes.
+      return Math.round(coord / 4) * 4;
+    }
+
     function drawWires() {
       const svgLayer = document.getElementById('builder-wire-svg');
       if (!svgLayer) return;
 
       const battery = builderCanvasComps.find(c => c.type === 'source');
       const vText = battery ? `${battery.v.toFixed(1)}V` : '0V';
+
+      // Tracks how many wires already bend along a given vertical/horizontal
+      // line so parallel/overlapping wires can be nudged apart (suggestion 4).
+      const vBendCounts = {};
+      const hBendCounts = {};
 
       svgLayer.innerHTML = `
         <defs>
@@ -7203,21 +7232,61 @@ Score: <span class="font-bold" id="quiz-score">0</span>
         const p2 = getTerminalCenter(w.to.compId, w.to.term);
 
         let pathData = '';
+        let joints = [];
+
         if (wireRoutingMode === 'orthogonal') {
-          const midX = (p1.x + p2.x) / 2;
-          pathData = `M ${p1.x} ${p1.y} L ${midX} ${p1.y} L ${midX} ${p2.y} L ${p2.x} ${p2.y}`;
+          const dx = p2.x - p1.x;
+          const dy = p2.y - p1.y;
+          // Rounded-corner radius (suggestion 1), clamped so it never
+          // overshoots a short segment.
+          const r = Math.max(0, Math.min(8, Math.abs(dx) / 2, Math.abs(dy) / 2));
+
+          if (Math.abs(dx) >= Math.abs(dy)) {
+            // Wider-than-tall: bend on a vertical segment at midX
+            // (suggestion 2 — pick the bend axis that fits the geometry).
+            let midX = p1.x + dx / 2;
+            const key = getBendKey(midX);
+            const n = vBendCounts[key] || 0;
+            vBendCounts[key] = n + 1;
+            midX += n * 6 * (dx >= 0 ? 1 : -1);
+
+            const sx1 = Math.sign(midX - p1.x) || 1;
+            const sy1 = Math.sign(p2.y - p1.y) || 1;
+            const sx2 = Math.sign(p2.x - midX) || 1;
+
+            pathData = `M ${p1.x} ${p1.y} L ${midX - r * sx1} ${p1.y} Q ${midX} ${p1.y} ${midX} ${p1.y + r * sy1} L ${midX} ${p2.y - r * sy1} Q ${midX} ${p2.y} ${midX + r * sx2} ${p2.y} L ${p2.x} ${p2.y}`;
+            joints = [{ x: midX, y: p1.y }, { x: midX, y: p2.y }];
+          } else {
+            // Taller-than-wide: bend on a horizontal segment at midY.
+            let midY = p1.y + dy / 2;
+            const key = getBendKey(midY);
+            const n = hBendCounts[key] || 0;
+            hBendCounts[key] = n + 1;
+            midY += n * 6 * (dy >= 0 ? 1 : -1);
+
+            const sy1 = Math.sign(midY - p1.y) || 1;
+            const sx1 = Math.sign(p2.x - p1.x) || 1;
+            const sy2 = Math.sign(p2.y - midY) || 1;
+
+            pathData = `M ${p1.x} ${p1.y} L ${p1.x} ${midY - r * sy1} Q ${p1.x} ${midY} ${p1.x + r * sx1} ${midY} L ${p2.x - r * sx1} ${midY} Q ${p2.x} ${midY} ${p2.x} ${midY + r * sy2} L ${p2.x} ${p2.y}`;
+            joints = [{ x: p1.x, y: midY }, { x: p2.x, y: midY }];
+          }
         } else {
           const dx = Math.abs(p2.x - p1.x) * 0.5;
           pathData = `M ${p1.x} ${p1.y} C ${p1.x + dx} ${p1.y}, ${p2.x - dx} ${p2.y}, ${p2.x} ${p2.y}`;
         }
 
+        // Small joint dots at each elbow (suggestion 3) — orthogonal mode only.
+        const jointDots = joints.map(j => `<circle cx="${j.x}" cy="${j.y}" r="2.5" fill="${w.color || '#22d3ee'}" class="pointer-events-none" />`).join('');
+
         return `
           <g class="cursor-pointer group pointer-events-auto" onclick="deleteWire('${w.id}')">
             <title>Wire: ${w.from.term} ➔ ${w.to.term} | Telemetry: ${isSimRunning ? `${vText} Active` : '0V Idle'}</title>
             <path d="${pathData}" stroke="transparent" stroke-width="16" fill="none" />
-            <path d="${pathData}" stroke="${w.color || '#22d3ee'}" stroke-width="3.5" fill="none" stroke-linecap="round" class="group-hover:stroke-rose-400 transition-all" filter="url(#wire-glow-builder)"/>
+            <path d="${pathData}" stroke="${w.color || '#22d3ee'}" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" class="group-hover:stroke-rose-400 transition-all" filter="url(#wire-glow-builder)"/>
+            ${jointDots}
             ${isSimRunning ? `
-              <path d="${pathData}" stroke="#ffffff" stroke-width="2" stroke-dasharray="4, 12" fill="none" class="animate-flow-fwd opacity-90" />
+              <path d="${pathData}" stroke="#ffffff" stroke-width="2" stroke-dasharray="3, 8" fill="none" class="animate-flow-fwd opacity-90" />
             ` : ''}
           </g>
         `;
@@ -8880,23 +8949,168 @@ Score: <span class="font-bold" id="quiz-score">0</span>
     // v5.63: Export/Share now capture the live #builder-canvas DOM (via
     // html2canvas) instead of hand-redrawing generic boxes + curved lines.
     // This makes the exported/shared PNG match exactly what the user sees
-    // in the Builder — real component symbols, dashed glowing wires with
-    // their actual colors/routing, and green terminal dots — rather than a
-    // simplified re-interpretation of the circuit.
-    async function buildCircuitExportCanvas() {
-      const TITLE_H = 34, FOOTER_H = 34; // CSS px, added above/below the captured canvas
+    // in the Builder — real component symbols and green terminal dots —
+    // rather than a simplified re-interpretation of the circuit.
+    //
+    // v5.66: several "looks unprofessional" fixes, all applied by
+    // temporarily adjusting the *live* canvas right before the screenshot
+    // and restoring it immediately after (nothing here is a new,
+    // separately-maintained drawing — it reuses the app's own existing
+    // orthogonal wire-routing mode and DOM):
+    //  - crop tightly to the actual circuit content instead of the whole
+    //    (mostly empty) canvas area
+    //  - hide the background grid dots (editor chrome, not circuit content)
+    //  - temporarily switch wires to the app's existing 90°/orthogonal
+    //    routing mode instead of whatever free-form curve the user drew,
+    //    and hide the animated "current flow" dashes if a simulation is
+    //    running — both restored right after capture
+    //  - tighter title/footer spacing, plus a subtle frame around the
+    //    whole schematic
+    async function buildCircuitExportCanvas(opts) {
+      opts = opts || {};
+      const TITLE_H = 30, FOOTER_H = 20; // CSS px, added above/below the captured content
+      // v5.69: PAD was 28px on all sides, which was enough for the card
+      // boxes themselves but too tight for the component name/value label
+      // (e.g. "9V Battery · 12V") — its glyphs render right at the card's
+      // top edge, and combined with sub-pixel rounding this meant the tops
+      // of characters like "9" were sometimes cut off in the export.
+      // v5.71: 40px of extra top padding (on top of the 28px title bar)
+      // turned into a visibly lopsided empty gap once the *actual* cause
+      // of that clipping (webfonts not finished loading — see the
+      // document.fonts.ready wait below) was fixed directly. 22px is
+      // still more generous than the other three sides, as a margin
+      // against glyph ascenders, but keeps the title-to-circuit gap (28+22)
+      // close to the footer-to-circuit gap (20+28) instead of dwarfing it.
+      const PAD = 28, PAD_TOP = 22; // CSS px, pre-scale
       const canvasEl = document.getElementById('builder-canvas');
-      const scale = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+      // v5.69: html2canvas paints whatever is on screen *right now* — if a
+      // custom/web font for the labels hasn't finished loading yet, it
+      // captures the fallback font mid-swap, which can look like clipped
+      // or malformed characters. Wait for fonts to be ready first so the
+      // capture always uses the final, correct glyphs.
+      try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (_) {}
+      // v5.65: share defaults to scale 1 — html2canvas render time grows
+      // roughly with scale², so on a devicePixelRatio-3 phone the old
+      // "always up to 2x" behaviour made the share sheet visibly slow to
+      // appear. Downloaded Export still gets full retina quality by
+      // passing an explicit scale.
+      const scale = opts.scale || Math.max(1, Math.min(2, window.devicePixelRatio || 1));
 
       // Hide elements that are canvas *tools*, not circuit content, so the
       // exported image is a clean schematic rather than a screenshot of the
       // editor chrome. The multimeter probes are the only such overlay.
-      const hideSelectors = ['#probe-red', '#probe-black'];
       const restoreList = [];
-      hideSelectors.forEach(sel => {
-        const el = canvasEl.querySelector(sel);
-        if (el) { restoreList.push([el, el.style.display]); el.style.display = 'none'; }
+      const hide = (el) => { if (el) { restoreList.push([el, el.style.display]); el.style.display = 'none'; } };
+      hide(canvasEl.querySelector('#probe-red'));
+      hide(canvasEl.querySelector('#probe-black'));
+
+      // v5.67: hide per-component *editing* controls for the capture —
+      // the ⚙ (edit)/↻ (rotate)/✕ (delete) icon row, and the
+      // potentiometer's live drag-slider — since these are editor chrome,
+      // not schematic content, and were showing up cluttering/overlapping
+      // the component labels in the exported image. Their value readouts
+      // (e.g. the pot's Ω label, switch ON/OFF state) are left visible
+      // since those are actual circuit information.
+      //
+      // v5.69: this list missed the *separately* injected per-component
+      // "⚙ Edit component properties" button (added later by the v571
+      // Advanced Properties feature via its own MutationObserver, marked
+      // with data-v571-edit) — a different element from the "Edit Value"
+      // button above, with its own title text, so the old selector never
+      // matched it. That's the small rounded gear badge that was still
+      // showing up in the top-right corner of every exported card.
+      canvasEl.querySelectorAll('.canvas-comp-card [title="Edit Value"], .canvas-comp-card [title="Rotate 90°"], .canvas-comp-card [title="Delete"], .canvas-comp-card input[type="range"], .canvas-comp-card [data-v571-edit]')
+        .forEach(hide);
+      // v5.66: grid dots read as "editor", not circuit content.
+      const hadGrid = canvasEl.classList.contains('bg-grid-matrix');
+      if (hadGrid) canvasEl.classList.remove('bg-grid-matrix');
+
+      // v5.68: back to curved wires for export/share — no longer forcing
+      // the orthogonal routing mode during capture. Only the animated
+      // "current flow" dashes are still hidden for a cleaner still image.
+      const svgLayer = document.getElementById('builder-wire-svg');
+      (svgLayer ? Array.from(svgLayer.querySelectorAll('.animate-flow-fwd')) : [])
+        .forEach(p => hide(p));
+
+      // v5.70: "compaction" step — only touches the *live* canvas
+      // temporarily for the screenshot (positions are restored + wires
+      // redrawn right after, same non-destructive pattern as the rest of
+      // this function). When components are dropped far apart, the wires
+      // between them become long diagonal lines crossing mostly-empty
+      // space, which reads as messy rather than a real schematic. Pull
+      // cards proportionally toward the layout's own centre before
+      // capturing — this shortens those wires and tightens the empty gaps
+      // without changing which terminal connects to which, or the user's
+      // actual saved layout. Already-tidy circuits (small spread) are
+      // left completely untouched.
+      const posRestoreList = [];
+      const cardsForLayout = Array.from(canvasEl.querySelectorAll('.canvas-comp-card'));
+      if (cardsForLayout.length > 1) {
+        let sx = 0, sy = 0;
+        const orig = cardsForLayout.map(card => {
+          const x = parseFloat(card.style.left) || 0;
+          const y = parseFloat(card.style.top) || 0;
+          sx += x; sy += y;
+          return { card, x, y };
+        });
+        const cx = sx / orig.length, cy = sy / orig.length;
+        let maxDist = 0;
+        orig.forEach(o => { maxDist = Math.max(maxDist, Math.hypot(o.x - cx, o.y - cy)); });
+        const TARGET_RADIUS = 230; // CSS px — a "comfortably tight" spread
+        const factor = maxDist > TARGET_RADIUS ? Math.max(0.55, TARGET_RADIUS / maxDist) : 1;
+        if (factor < 1) {
+          orig.forEach(o => {
+            posRestoreList.push([o.card, o.card.style.left, o.card.style.top]);
+            o.card.style.left = `${cx + (o.x - cx) * factor}px`;
+            o.card.style.top = `${cy + (o.y - cy) * factor}px`;
+          });
+          if (typeof drawWires === 'function') drawWires();
+        }
+      }
+
+      // v5.70: don't let long component info (e.g. "AC Source · 12V AC ·
+      // 50Hz") get cut off with "…" in the export. That truncation is a
+      // deliberate space-saving choice in the live editor, but in a
+      // shared/exported image it just looks like missing data.
+      const labelRestoreList = [];
+      canvasEl.querySelectorAll('.canvas-comp-card span.truncate').forEach(el => {
+        labelRestoreList.push([el, el.style.cssText]);
+        el.style.maxWidth = 'none';
+        el.style.overflow = 'visible';
+        el.style.whiteSpace = 'nowrap';
       });
+
+      // v5.66: crop to a bounding box around the actual component cards
+      // (+ padding for their wires/labels) instead of exporting the whole,
+      // mostly-empty canvas area.
+      // v5.70: this now runs *before* capture (moved from after) so the
+      // bounding box reflects the compacted layout and widened labels
+      // above — otherwise the crop would still be sized for the original,
+      // spread-out positions while the captured pixels show the tighter
+      // one, or a widened label could render past the crop edge.
+      const canvasRect = canvasEl.getBoundingClientRect();
+      const cards = Array.from(canvasEl.querySelectorAll('.canvas-comp-card'));
+      const labelsForCrop = Array.from(canvasEl.querySelectorAll('.canvas-comp-card span.truncate'));
+      const canvasCssW = canvasEl.clientWidth, canvasCssH = canvasEl.clientHeight;
+      let cropX = 0, cropY = 0, cropW = canvasCssW, cropH = canvasCssH;
+      if (cards.length) {
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        cards.concat(labelsForCrop).forEach(el => {
+          const r = el.getBoundingClientRect();
+          const left = r.left - canvasRect.left, top = r.top - canvasRect.top;
+          const right = left + r.width, bottom = top + r.height;
+          if (left < minX) minX = left;
+          if (top < minY) minY = top;
+          if (right > maxX) maxX = right;
+          if (bottom > maxY) maxY = bottom;
+        });
+        cropX = Math.max(0, minX - PAD);
+        cropY = Math.max(0, minY - PAD_TOP);
+        cropW = Math.min(canvasCssW, maxX + PAD) - cropX;
+        cropH = Math.min(canvasCssH, maxY + PAD) - cropY;
+      }
+      const srcX = Math.round(cropX * scale), srcY = Math.round(cropY * scale);
+      const srcW = Math.max(1, Math.round(cropW * scale)), srcH = Math.max(1, Math.round(cropH * scale));
 
       let captured;
       try {
@@ -8908,10 +9122,17 @@ Score: <span class="font-bold" id="quiz-score">0</span>
         });
       } finally {
         restoreList.forEach(([el, disp]) => { el.style.display = disp; });
+        if (hadGrid) canvasEl.classList.add('bg-grid-matrix');
+        labelRestoreList.forEach(([el, css]) => { el.style.cssText = css; });
+        if (posRestoreList.length) {
+          posRestoreList.forEach(([card, left, top]) => { card.style.left = left; card.style.top = top; });
+          if (typeof drawWires === 'function') drawWires();
+        }
       }
 
-      const totalW = captured.width;
-      const totalH = captured.height + Math.round((TITLE_H + FOOTER_H) * scale);
+
+      const totalW = srcW;
+      const totalH = srcH + Math.round((TITLE_H + FOOTER_H) * scale);
       const exportCanvas = document.createElement('canvas');
       exportCanvas.width = totalW;
       exportCanvas.height = totalH;
@@ -8919,24 +9140,143 @@ Score: <span class="font-bold" id="quiz-score">0</span>
       ctx.fillStyle = '#020617';
       ctx.fillRect(0, 0, totalW, totalH);
 
-      ctx.font = `bold ${Math.round(13 * scale)}px monospace`;
-      ctx.fillStyle = '#94a3b8';
+      // v5.72: proper title block instead of one flat grey monospace
+      // line — this is the first thing anyone sees when the image is
+      // shared, so it's worth a bit more than a debug-style label.
+      const midY = Math.round(TITLE_H * scale / 2) + Math.round(1 * scale);
+
+      // v5.74: use the app's real gradient icon (icons/icon-512.png)
+      // instead of a hand-drawn flat-cyan approximation, so exported/
+      // shared images carry the actual brand mark. Loaded once and cached
+      // on window so repeat exports don't refetch it. If it's slow or
+      // fails to load, fall back to the original vector spark so the
+      // title bar can never end up with a blank gap.
+      if (!window.__nslBrandIconPromise) {
+        window.__nslBrandIconPromise = new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = () => resolve(null);
+          img.src = 'icons/icon-512.png';
+        });
+      }
+      const brandIcon = await Promise.race([
+        window.__nslBrandIconPromise,
+        new Promise((resolve) => setTimeout(() => resolve(null), 400))
+      ]);
+
+      const markSize = 18 * scale, markX = 12 * scale, markY = midY - markSize / 2;
+      if (brandIcon) {
+        ctx.drawImage(brandIcon, markX, markY, markSize, markSize);
+      } else {
+        const markR = 7 * scale, cx = markX + markR, cy = midY;
+        ctx.beginPath();
+        ctx.arc(cx, cy, markR, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(34,211,238,0.15)';
+        ctx.fill();
+        ctx.strokeStyle = '#22d3ee';
+        ctx.lineWidth = Math.max(1, scale);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(cx + markR * 0.15, cy - markR * 0.55);
+        ctx.lineTo(cx - markR * 0.25, cy + markR * 0.1);
+        ctx.lineTo(cx + markR * 0.05, cy + markR * 0.1);
+        ctx.lineTo(cx - markR * 0.15, cy + markR * 0.55);
+        ctx.lineTo(cx + markR * 0.35, cy - markR * 0.05);
+        ctx.lineTo(cx + markR * 0.05, cy - markR * 0.05);
+        ctx.closePath();
+        ctx.fillStyle = '#22d3ee';
+        ctx.fill();
+      }
+
+      // Two-tone brand name + subtitle, sans-serif with a touch of
+      // letter-spacing (feature-detected — no-op on engines that don't
+      // support it yet, rather than throwing).
+      const sans = 'ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif';
+      try { ctx.letterSpacing = `${0.3 * scale}px`; } catch (_) {}
       ctx.textAlign = 'left';
-      ctx.fillText('NIL SparkLab — Circuit Schematic', 14 * scale, 22 * scale);
+      ctx.textBaseline = 'middle';
+      const titleX = markX + markSize + 8 * scale;
+      ctx.font = `700 ${Math.round(13 * scale)}px ${sans}`;
+      ctx.fillStyle = '#67e8f9';
+      ctx.fillText('NIL SparkLab', titleX, midY);
+      const brandW = ctx.measureText('NIL SparkLab').width;
+      ctx.font = `400 ${Math.round(11 * scale)}px ${sans}`;
+      ctx.fillStyle = '#64748b';
+      const subtitle = '  ·  Circuit Schematic';
+      ctx.fillText(subtitle, titleX + brandW, midY);
+      const leftBlockEnd = titleX + brandW + ctx.measureText(subtitle).width;
 
-      ctx.drawImage(captured, 0, Math.round(TITLE_H * scale));
+      // Right-aligned metadata, datasheet-title-block style — component
+      // count + month/year, in the same subtitle tone. Skipped on narrow
+      // exports (e.g. a single component) where it would otherwise
+      // crowd/overlap the title text on the left.
+      const compCount = cardsForLayout.length;
+      const dateStr = new Date().toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+      const metaText = `${compCount} component${compCount === 1 ? '' : 's'} · ${dateStr}`;
+      ctx.font = `400 ${Math.round(9 * scale)}px ${sans}`;
+      const metaW = ctx.measureText(metaText).width;
+      if (totalW - 12 * scale - metaW > leftBlockEnd + 16 * scale) {
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#475569';
+        ctx.fillText(metaText, totalW - 12 * scale, midY);
+      }
+      try { ctx.letterSpacing = '0px'; } catch (_) {}
+      ctx.textBaseline = 'alphabetic';
 
-      ctx.font = `${Math.round(10 * scale)}px monospace`;
+      // v5.69: thin divider between the title bar and the circuit itself —
+      // small touch, but it stops the title text and the top wire/label
+      // from reading as one cluttered block, matching the subtle footer
+      // frame already used below.
+      ctx.strokeStyle = 'rgba(148,163,184,0.2)';
+      ctx.lineWidth = Math.max(1, scale);
+      ctx.beginPath();
+      ctx.moveTo(0, Math.round(TITLE_H * scale) - ctx.lineWidth / 2);
+      ctx.lineTo(totalW, Math.round(TITLE_H * scale) - ctx.lineWidth / 2);
+      ctx.stroke();
+
+      ctx.drawImage(captured, srcX, srcY, srcW, srcH, 0, Math.round(TITLE_H * scale), srcW, srcH);
+
+      ctx.font = `${Math.round(9 * scale)}px monospace`;
       ctx.fillStyle = '#475569';
       ctx.textAlign = 'center';
-      ctx.fillText('Made with NIL SparkLab · nilsparklab.github.io', totalW / 2, totalH - 12 * scale);
+      ctx.fillText('Made with NIL SparkLab · nilsparklab.github.io', totalW / 2, totalH - 7 * scale);
+
+      // v5.66: subtle frame for a more polished, datasheet-like feel.
+      ctx.strokeStyle = 'rgba(148,163,184,0.35)';
+      ctx.lineWidth = Math.max(1, scale);
+      ctx.strokeRect(ctx.lineWidth / 2, ctx.lineWidth / 2, totalW - ctx.lineWidth, totalH - ctx.lineWidth);
 
       return exportCanvas;
     }
 
+
     async function shareCircuitPNG() {
       safeSound('click');
+      // v5.65: fire the tap animation immediately, before any of the
+      // (async) capture work below, so the button visibly reacts the
+      // instant it's pressed rather than only after the sheet appears.
+      const shareBtn = document.getElementById('nsl-share-btn');
+      if (shareBtn) {
+        shareBtn.classList.remove('nsl-pulse');
+        void shareBtn.offsetWidth; // restart the animation on rapid re-taps
+        shareBtn.classList.add('nsl-pulse');
+      }
       if (typeof html2canvas !== 'function') { exportToast('Sharing image library failed to load. Check your connection and try again.'); return; }
+      // v5.65: the accurate DOM capture (html2canvas) is being kept as-is
+      // rather than swapped for a faster, simplified hand-drawn schematic
+      // — so the capture time itself isn't going away. Give immediate
+      // feedback that work is happening, so the wait reads as "preparing
+      // your image" rather than "nothing is happening".
+      exportToast('Preparing circuit image…');
+      // v5.65: html2canvas does a burst of synchronous, CPU-heavy canvas
+      // drawing on the main thread. Calling it in the very same tick as the
+      // click meant the browser had no chance to actually paint the tap
+      // animation (or anything else) before freezing up — so the button
+      // felt like it "waited, then reacted late" instead of responding
+      // instantly. Yielding across two animation frames lets the browser
+      // paint first; the capture then starts a beat later but the button
+      // itself feels immediate.
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
       // v5.64: navigator.share requires a secure context (https:// or
       // localhost). Opening this file directly from Downloads/local storage
       // (file:// or content://) is NOT a secure context, so sharing silently
@@ -8945,7 +9285,15 @@ Score: <span class="font-bold" id="quiz-score">0</span>
       const insecureContext = typeof window.isSecureContext === 'boolean' && !window.isSecureContext;
       let canvas;
       try {
-        canvas = await buildCircuitExportCanvas();
+        // v5.73: scale 1 for every share made small/simple circuits look
+        // noticeably blurrier than the downloaded Export (which gets up to
+        // 2x). html2canvas cost scales with total pixel count, not DPI
+        // alone, so a typical 2-5 component circuit can afford full
+        // retina quality without the slow-open problem v5.65 was fixing —
+        // only genuinely large/complex circuits still fall back to scale 1.
+        const shareCompCount = document.querySelectorAll('#builder-canvas .canvas-comp-card').length;
+        const shareScale = shareCompCount > 8 ? 1 : Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+        canvas = await buildCircuitExportCanvas({ scale: shareScale });
       } catch (_) {
         exportToast('Could not prepare the circuit image.');
         return;
@@ -8954,15 +9302,38 @@ Score: <span class="font-bold" id="quiz-score">0</span>
         if (!blob) { exportToast('Could not prepare the circuit image.'); return; }
         const file = new File([blob], `NilSparkLab_Circuit_${Date.now()}.png`, { type: 'image/png' });
         const shareData = { files: [file], title: 'NIL SparkLab Circuit', text: 'Check out this circuit I built in NIL SparkLab!' };
-        const canUseNativeShare = !insecureContext && navigator.canShare && navigator.canShare(shareData) && navigator.share;
-        if (canUseNativeShare) {
-          navigator.share(shareData).catch(() => {});
-        } else {
+        const fallbackDownload = (msg) => {
           const a = document.createElement('a');
           a.href = URL.createObjectURL(blob);
           a.download = file.name;
           a.click();
-          exportToast(insecureContext
+          exportToast(msg);
+        };
+        let canUseNativeShare = false;
+        try {
+          canUseNativeShare = !insecureContext && !!navigator.canShare && navigator.canShare(shareData) && !!navigator.share;
+        } catch (_) {
+          // v5.65: navigator.canShare() itself can throw in some mobile
+          // WebViews instead of returning false. Treat that the same as
+          // "native share unavailable" rather than letting it escape
+          // uncaught (which previously made the Share button look like it
+          // did nothing at all).
+          canUseNativeShare = false;
+        }
+        if (canUseNativeShare) {
+          navigator.share(shareData).catch((err) => {
+            // v5.65: navigator.share() rejects (lost user-activation after
+            // the async toBlob/html2canvas work, no share target, etc.) and
+            // previously this rejection was swallowed silently — the button
+            // appeared to do nothing. Fall back to a plain download + toast
+            // instead, same as the "unsupported" path below. The one
+            // exception is AbortError, which means the user deliberately
+            // dismissed the share sheet — respect that and stay silent.
+            if (err && err.name === 'AbortError') return;
+            fallbackDownload('Sharing failed — image downloaded instead. You can attach it to WhatsApp/Email manually.');
+          });
+        } else {
+          fallbackDownload(insecureContext
             ? 'Sharing needs the site opened over https (not a local file) — image downloaded instead. You can attach it to WhatsApp/Email manually.'
             : 'Sharing is not supported on this browser — image downloaded instead. You can attach it to WhatsApp/Email manually.');
         }
@@ -10758,6 +11129,8 @@ Score: <span class="font-bold" id="quiz-score">0</span>
         // Back while the component detail modal is open should just close
         // it and land back on the Component Library, not change section.
         modalEl.classList.add('hidden');
+        document.documentElement.classList.remove('nsl-sa-lock');
+        document.body.classList.remove('nsl-sa-lock');
         if (!(e.state && e.state.compModal)) return;
       }
       const sectionId = (e.state && e.state.section) || 'home';
@@ -14767,6 +15140,10 @@ background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.3);color:#67e8f
     document.documentElement.classList.add("nsl-sa-lock");
     document.body.classList.add("nsl-sa-lock");
     panel.classList.add("open"); panel.setAttribute("aria-hidden","false");
+    // Lets the device/browser Back button close the panel instead of
+    // navigating away from the page, matching the Component Inspector
+    // modal's existing back-to-close behaviour.
+    history.pushState(Object.assign({}, history.state, { saPanel: true }), '');
     renderChips();
     // v5.96: opening the Assistant is not the same as asking it.
     // Keep the panel quiet until the user submits a question or taps a chip.
@@ -14792,6 +15169,17 @@ background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.3);color:#67e8f
   }
   function closePanel(){
     if(!panel) return;
+    if (history.state && history.state.saPanel) {
+      // Pops the entry pushed by openPanel(); the popstate listener below
+      // performs the actual close, keeping the X button and device Back
+      // in sync (same pattern as the Component Inspector modal).
+      history.back();
+      return;
+    }
+    actuallyClosePanel();
+  }
+  function actuallyClosePanel(){
+    if(!panel) return;
     var ov=document.getElementById("nsl-sa-overlay");
     if(ov) ov.classList.remove("open");
     document.documentElement.classList.remove("nsl-sa-lock");
@@ -14800,6 +15188,11 @@ background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.3);color:#67e8f
     resetAssistantPanels();
     if(input) input.value="";
   }
+  window.addEventListener('popstate', function(e){
+    if (panel && panel.classList.contains('open') && !(e.state && e.state.saPanel)) {
+      actuallyClosePanel();
+    }
+  });
   if(btn) btn.addEventListener("click", function(){ panel.classList.contains("open")?closePanel():openPanel(); });
   if(close) close.addEventListener("click", closePanel);
   async function doAsk(){
@@ -26791,7 +27184,12 @@ window.NilSparkLabSafeWifiV1013={
      Builder canvas exactly as it renders on screen (real component symbols,
      glowing dashed wires, green terminals) instead of the old simplified
      redraw. Same-origin only — not part of the offline precache list. -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- v5.65: was cdnjs.cloudflare.com, which is NOT in this page's CSP
+     script-src allowlist (only 'self' and unpkg.com are allowed). The
+     browser silently blocked this script from loading (a CSP violation,
+     visible only in the console), so html2canvas was never defined and
+     Export/Share looked like they did nothing at all. -->
+<script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="js/api/api-config.js"></script>
 <script src="js/api/api-response.js"></script>
 <script src="js/api/api-client.js"></script>
