@@ -26149,6 +26149,16 @@ window.NilSparkLabSafeWifiV1013={
       return true;
     }
 
+    // v10.21: Installed PWA ("Add to Home Screen") has no address-bar/site-settings
+    // UI, so the old "browser settings mein allow karo" message left users with no
+    // way to actually fix a denied mic permission once inside the installed app.
+    // Detect standalone/installed mode and point to Android's own App Info screen,
+    // which is where mic permission for an installed PWA (WebAPK) actually lives.
+    var isStandalone = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches)
+      || window.navigator.standalone === true
+      || document.referrer.indexOf("android-app://") === 0;
+    var androidSettingsMsg = "Microphone permission block hai. App icon ko long-press karo → App info → Permissions → Microphone → Allow karo, phir app dobara kholo.";
+
     var rec=null,listening=false;
     try{rec=new SR();}catch(_){mic.onclick=function(){notify("Voice input could not be initialized.");};return true;}
     rec.lang=(typeof window.currentLang!=="undefined"&&window.currentLang==="hi")?"hi-IN":"en-IN";
@@ -26166,18 +26176,35 @@ window.NilSparkLabSafeWifiV1013={
     };
     rec.onerror=function(ev){
       var code=ev&&ev.error||"unknown";
-      var msg={
-        "not-allowed":"Microphone permission denied. Browser settings mein microphone Allow karo.",
-        "service-not-allowed":"Speech service allowed nahi hai.",
-        "no-speech":"Speech detect nahi hui. Dobara try karo.",
-        "network":"Speech service/network unavailable. Internet check karo.",
-        "audio-capture":"Microphone capture unavailable. Device mic check karo."
-      }[code]||("Mic error: "+code);
+      var msg;
+      if(code==="not-allowed"||code==="service-not-allowed"){
+        msg=isStandalone?androidSettingsMsg:"Microphone permission denied. Browser settings mein microphone Allow karo.";
+      }else{
+        msg={
+          "no-speech":"Speech detect nahi hui. Dobara try karo.",
+          "network":"Speech service/network unavailable. Internet check karo.",
+          "audio-capture":"Microphone capture unavailable. Device mic check karo."
+        }[code]||("Mic error: "+code);
+      }
       notify(msg);reset();
     };
     rec.onend=reset;
+
+    // v10.21: In standalone/installed mode, a permission already denied earlier
+    // sometimes fails silently (no onerror fires) instead of re-prompting. Check
+    // the Permissions API up front where supported, so the user gets the actionable
+    // Android Settings message immediately instead of tapping mic with no feedback.
     mic.onclick=function(){
       if(listening)return;
+      if(isStandalone && navigator.permissions && navigator.permissions.query){
+        navigator.permissions.query({name:"microphone"}).then(function(status){
+          if(status.state==="denied"){ notify(androidSettingsMsg); return; }
+          try{rec.start();}catch(_){reset();notify("Mic busy hai. 1 second baad dobara try karo.");}
+        }).catch(function(){
+          try{rec.start();}catch(_){reset();notify("Mic busy hai. 1 second baad dobara try karo.");}
+        });
+        return;
+      }
       try{rec.start();}catch(_){reset();notify("Mic busy hai. 1 second baad dobara try karo.");}
     };
     return true;
