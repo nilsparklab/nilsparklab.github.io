@@ -3174,6 +3174,18 @@ animation:nslHeroIn .5s cubic-bezier(.22,1,.36,1) both;
 #builder-component-grid .nsl-comp-row.nsl-comp-added,
 #builder-recent-list button.nsl-comp-added{animation:none!important;box-shadow:none!important}
 }
+/* v11.4 — "New version available" banner. Sits as a normal-flow block
+   before the sticky header (not fixed), so it scrolls away naturally
+   once the page is scrolled and never overlaps/fights the header's own
+   sticky positioning. */
+#nsl-update-banner{width:100%;background:linear-gradient(90deg,#0e7490,#0891b2);box-shadow:0 2px 10px rgba(0,0,0,.35);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;animation:nslUpdateBannerIn .25s ease-out}
+#nsl-update-banner .nsl-update-banner-inner{display:flex;align-items:center;gap:10px;padding:8px 14px;max-width:900px;margin:0 auto;flex-wrap:wrap}
+#nsl-update-banner .nsl-update-banner-text{color:#ecfeff;font-size:12.5px;font-weight:600;flex:1 1 auto}
+#nsl-update-banner .nsl-update-banner-btn{background:#022c3a;color:#67e8f9;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;text-decoration:none;border:1px solid rgba(103,232,249,.4);white-space:nowrap}
+#nsl-update-banner .nsl-update-banner-btn:hover{background:#04384a}
+#nsl-update-banner .nsl-update-banner-close{background:transparent;border:none;color:#ecfeff;font-size:18px;line-height:1;cursor:pointer;padding:0 6px;opacity:.85}
+#nsl-update-banner .nsl-update-banner-close:hover{opacity:1}
+@keyframes nslUpdateBannerIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
 </style>
 <meta content="summary_large_image" name="twitter:card"/><meta content="https://nilsparklab.github.io/assets/seo/og-image.png" name="twitter:image"/></head>
 <body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col selection:bg-cyan-500 selection:text-black" data-nil-sparklab-version="11.0" data-nil-sparklab-release="v11.0">
@@ -28501,5 +28513,70 @@ color:#5b6b84;
 <a href="/terms/" style="color:inherit;text-decoration:underline">Terms of Service</a>
 </div>
 </footer>
+<script id="nsl-v114-update-check">
+(() => {
+  "use strict";
+  // v11.4 — lets people running an old downloaded/sideloaded copy of this
+  // file find out a newer version exists (Play-Store-style installs
+  // auto-update; a plain downloaded HTML/APK copy never does). Pings the
+  // live site for a small version.json, and — only if it's genuinely
+  // newer — shows a dismissible banner with a link to update. Fails
+  // completely silently offline/blocked so it can never interrupt the app.
+  const VERSION_CHECK_URL = "https://nilsparklab.github.io/version.json";
+  const DISMISS_KEY = "nsl-update-dismissed-version";
+  const CHECK_DELAY_MS = 1500; // let the app finish its own startup first
+
+  function compareVersions(a, b) {
+    const pa = String(a).split(".").map(n => parseInt(n, 10) || 0);
+    const pb = String(b).split(".").map(n => parseInt(n, 10) || 0);
+    const len = Math.max(pa.length, pb.length);
+    for (let i = 0; i < len; i++) {
+      const na = pa[i] || 0, nb = pb[i] || 0;
+      if (na !== nb) return na > nb ? 1 : -1;
+    }
+    return 0;
+  }
+
+  function showUpdateBanner(remote, localVersion) {
+    if (document.getElementById('nsl-update-banner')) return;
+    const banner = document.createElement('div');
+    banner.id = 'nsl-update-banner';
+    banner.setAttribute('role', 'status');
+    const safeVersion = String(remote.version).replace(/[<>&"]/g, '');
+    const safeUrl = /^https:\/\/nilsparklab\.github\.io\//.test(remote.url || '') ? remote.url : 'https://nilsparklab.github.io/';
+    banner.innerHTML =
+      '<div class="nsl-update-banner-inner">' +
+        '<span class="nsl-update-banner-text">⚡ New version v' + safeVersion + ' is available' + (localVersion ? ' (you have v' + String(localVersion).replace(/[<>&"]/g, '') + ')' : '') + '</span>' +
+        '<a class="nsl-update-banner-btn" href="' + safeUrl + '" target="_blank" rel="noopener noreferrer">Update</a>' +
+        '<button class="nsl-update-banner-close" type="button" aria-label="Dismiss">×</button>' +
+      '</div>';
+    document.body.insertBefore(banner, document.body.firstChild);
+    const closeBtn = banner.querySelector('.nsl-update-banner-close');
+    if (closeBtn) closeBtn.addEventListener('click', () => {
+      try { localStorage.setItem(DISMISS_KEY, remote.version); } catch (_) {}
+      banner.remove();
+    });
+  }
+
+  function checkForAppUpdate() {
+    try { if (navigator.onLine === false) return; } catch (_) {}
+    const localVersion = document.body.dataset.nilSparklabVersion;
+    if (!localVersion) return;
+    fetch(VERSION_CHECK_URL, { cache: 'no-store' })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (!data || !data.version) return;
+        if (compareVersions(data.version, localVersion) <= 0) return;
+        let dismissed = null;
+        try { dismissed = localStorage.getItem(DISMISS_KEY); } catch (_) {}
+        if (dismissed === data.version) return;
+        showUpdateBanner(data, localVersion);
+      })
+      .catch(() => { /* offline, blocked, or version.json not deployed yet — stay silent */ });
+  }
+
+  setTimeout(checkForAppUpdate, CHECK_DELAY_MS);
+})();
+</script>
 </body>
 </html>
