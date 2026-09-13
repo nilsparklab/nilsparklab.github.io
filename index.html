@@ -3198,20 +3198,67 @@ animation:nslHeroIn .5s cubic-bezier(.22,1,.36,1) both;
   setTimeout(hidePreloader, 6000);
 })();
 </script>
+<style>
+#nsl-status-pill{
+position:fixed;top:10px;left:50%;transform:translateX(-50%) scale(.85);z-index:9998;
+display:none;align-items:center;gap:6px;font-size:11px;font-weight:700;
+padding:5px 12px;border-radius:999px;font-family:'Inter',ui-sans-serif,system-ui,sans-serif;
+opacity:0;transition:opacity .25s ease, transform .25s ease;
+box-shadow:0 4px 14px rgba(0,0,0,.35);
+}
+#nsl-status-pill.nsl-pill-show{opacity:1;transform:translateX(-50%) scale(1);}
+#nsl-status-pill.nsl-pill-offline{background:#78350f;color:#fde68a;border:1px solid rgba(253,230,138,.35);}
+#nsl-status-pill.nsl-pill-online{background:#064e3b;color:#a7f3d0;border:1px solid rgba(167,243,208,.35);}
+</style>
 <div id="nsl-offline-banner" role="status" aria-live="polite" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9998;background:#78350f;color:#fef3c7;font-size:12px;font-weight:600;text-align:center;padding:7px 12px;font-family:'Inter',ui-sans-serif,system-ui,sans-serif;">
 ⚠ You're offline — Circuit Builder, Components &amp; Quizzes still work. Smart Assistant/Search needs internet.
 </div>
+<div id="nsl-status-pill" role="status" aria-live="polite"></div>
 <script>
 (function(){
   "use strict";
   var banner=document.getElementById('nsl-offline-banner');
-  function render(){
-    if(!banner) return;
-    banner.style.display = navigator.onLine ? 'none' : 'block';
+  var pill=document.getElementById('nsl-status-pill');
+  var shrinkTimer=null, hideTimer=null;
+
+  function clearTimers(){
+    if(shrinkTimer){clearTimeout(shrinkTimer);shrinkTimer=null;}
+    if(hideTimer){clearTimeout(hideTimer);hideTimer=null;}
   }
-  window.addEventListener('online', render);
-  window.addEventListener('offline', render);
-  render();
+  function resetPill(){
+    pill.classList.remove('nsl-pill-show','nsl-pill-offline','nsl-pill-online');
+    pill.style.display='none';
+  }
+  function showFullOffline(){
+    clearTimers();
+    resetPill();
+    banner.style.display='block';
+    shrinkTimer=setTimeout(function(){
+      banner.style.display='none';
+      pill.textContent='🔸 Offline';
+      pill.className='nsl-pill-offline';
+      pill.style.display='flex';
+      requestAnimationFrame(function(){ pill.classList.add('nsl-pill-show'); });
+    },5000);
+  }
+  function showOnlineBadge(){
+    clearTimers();
+    banner.style.display='none';
+    pill.textContent='🔹 Online';
+    pill.className='nsl-pill-online';
+    pill.style.display='flex';
+    requestAnimationFrame(function(){ pill.classList.add('nsl-pill-show'); });
+    hideTimer=setTimeout(function(){
+      pill.classList.remove('nsl-pill-show');
+      setTimeout(resetPill,250);
+    },2000);
+  }
+  function renderInitial(){
+    if(!navigator.onLine) showFullOffline(); else resetPill();
+  }
+  window.addEventListener('offline', showFullOffline);
+  window.addEventListener('online', showOnlineBadge);
+  renderInitial();
 })();
 </script>
 <script id="nsl-v103-panel-autoclose">
@@ -3288,6 +3335,7 @@ NIL SparkLab
 <button class="nav-btn px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition" data-i18n="navCalculators" id="nav-calculators" onclick="showSection('calculators')">Calculators</button>
 <button class="nav-btn px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition" data-nsl-action="show-quiz" data-i18n="navQuiz" id="nav-quiz">Quiz</button>
 <button class="nav-btn px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition" data-i18n="navSafety" id="nav-safety" onclick="showSection('safety')">Safety</button>
+<a class="nav-btn px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition" data-i18n="navReport" href="mailto:security.nil@gmail.com?subject=Security%20Report%20%E2%80%94%20NIL%20SparkLab" rel="noopener noreferrer">Report Issue</a>
 </nav>
 <div class="flex items-center gap-3">
 <div class="hidden sm:flex items-center gap-1.5 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg text-[11px] font-mono text-cyan-400">
@@ -3604,18 +3652,6 @@ Interactive Circuit Builder Sandbox
 <option value="led_burn">Unprotected LED (Overcurrent Fault)</option>
 <option value="logic_and">Digital AND Gate Test</option>
 </select>
-<button class="px-3 py-2 bg-slate-800 text-cyan-300 border border-slate-700 hover:border-cyan-500 rounded-lg text-xs font-mono transition flex items-center gap-1.5" onclick="exportCircuitPNG()" title="Download High-Res PNG Image">
-<i class="w-3.5 h-3.5" data-lucide="camera"></i> PNG
-</button>
-<button class="px-3 py-2 bg-slate-800 text-emerald-300 border border-slate-700 hover:border-emerald-500 rounded-lg text-xs font-mono transition flex items-center gap-1.5" onclick="shareCircuitPNG()" title="Share this circuit">
-<i class="w-3.5 h-3.5" data-lucide="share-2"></i> Share
-</button>
-<button class="px-3 py-2 bg-slate-800 text-slate-200 border border-slate-700 rounded-lg text-xs font-mono hover:bg-slate-700 transition flex items-center gap-1.5" onclick="exportCircuitJSON()">
-<i class="w-3.5 h-3.5" data-lucide="save"></i> JSON
-</button>
-<button class="px-3 py-2 bg-slate-800 text-slate-300 font-semibold rounded-lg text-xs hover:bg-slate-700 transition" onclick="resetBuilder()">
-<span data-i18n="btnClear">Clear</span>
-</button>
 </div>
 </div>
 <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
@@ -3691,10 +3727,18 @@ Interactive Circuit Builder Sandbox
 </div>
 </div>
 <div class="lg:col-span-3 bg-slate-900 border border-slate-800 rounded-xl p-3 sm:p-4 flex flex-col justify-between min-h-[580px]">
+<div class="flex items-center gap-1.5 flex-wrap mb-2">
 <button class="px-3 py-2 bg-slate-800 text-slate-200 border border-slate-700 rounded-lg text-xs font-mono hover:bg-slate-700 transition flex items-center gap-1.5" onclick="document.getElementById('import-json-input').click()">
 <i class="w-3.5 h-3.5" data-lucide="folder-open"></i> Import
 </button>
 <input accept=".json" class="hidden" id="import-json-input" onchange="importCircuitJSON(event)" type="file"/>
+<button class="px-3 py-2 bg-slate-800 text-cyan-300 border border-slate-700 hover:border-cyan-500 rounded-lg text-xs font-mono transition flex items-center gap-1.5" onclick="exportCircuitJSON()" title="Export circuit as a JSON file — reimport it anywhere with components and wires intact">
+<i class="w-3.5 h-3.5" data-lucide="save"></i> Export
+</button>
+<button class="px-3 py-2 bg-slate-800 text-emerald-300 border border-slate-700 hover:border-emerald-500 rounded-lg text-xs font-mono transition flex items-center gap-1.5" onclick="shareCircuitPNG()" title="Share this circuit">
+<i class="w-3.5 h-3.5" data-lucide="share-2"></i> Share
+</button>
+</div>
 <div class="flex items-center gap-1.5 flex-wrap" id="nsl-v547-sim-controls">
 <button class="px-2.5 py-2 bg-slate-800 text-slate-200 border border-slate-700 hover:border-cyan-500 rounded-lg text-xs font-mono transition flex items-center gap-1" onclick="undoAction()" title="Undo (Ctrl+Z)">
 <i class="w-3.5 h-3.5" data-lucide="undo-2"></i> Undo
@@ -8800,64 +8844,123 @@ Score: <span class="font-bold" id="quiz-score">0</span>
       }
     }
 
-    function exportCircuitPNG() {
-      safeSound('click');
-      const dataUrl = buildCircuitExportCanvas().toDataURL('image/png');
-      const a=document.createElement('a'); a.href=dataUrl; a.download=`NilSparkLab_v5.55_Schematic_${Date.now()}.png`; a.click();
+    // v5.64: bare `toast(...)` is not defined anywhere in this script block —
+    // the real implementation only exists as `window.nslV575Toast` (set by a
+    // later, separate <script> block). Calling the undefined `toast` threw a
+    // silent ReferenceError inside these async functions (invisible to the
+    // user — nothing on screen, only a console error), which is why Export/
+    // Share failures looked like "nothing happens". Route through this safe
+    // wrapper instead, matching the fallback pattern already used elsewhere
+    // in the codebase.
+    function exportToast(m) {
+      try { if (typeof window.nslV575Toast === 'function') return window.nslV575Toast(m); } catch (_) {}
+      try { if (typeof window.toast === 'function') return window.toast(m); } catch (_) {}
+      try { if (window.NilSparkLabDialog && typeof window.NilSparkLabDialog.alert === 'function') return window.NilSparkLabDialog.alert(m); } catch (_) {}
+      console.warn('NilSparkLab:', m);
     }
 
-    function buildCircuitExportCanvas() {
-      const canvasEl = document.getElementById('builder-canvas');
-      const rect = canvasEl.getBoundingClientRect();
-      const scale = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
-      const exportCanvas = document.createElement('canvas');
-      exportCanvas.width = Math.round(rect.width * scale);
-      exportCanvas.height = Math.round(rect.height * scale);
-      const ctx = exportCanvas.getContext('2d');
-      ctx.scale(scale, scale);
-      ctx.fillStyle = '#020617';
-      ctx.fillRect(0, 0, rect.width, rect.height);
-      ctx.font = 'bold 12px monospace';
-      ctx.fillStyle = '#94a3b8';
-      ctx.fillText('NIL SparkLab — Circuit Schematic', 14, 20);
+    async function exportCircuitPNG() {
+      safeSound('click');
+      if (typeof html2canvas !== 'function') { exportToast('Export image library failed to load. Check your connection and try again.'); return; }
+      try {
+        const canvas = await buildCircuitExportCanvas();
+        const dataUrl = canvas.toDataURL('image/png');
+        const a = document.createElement('a'); a.href = dataUrl; a.download = `NilSparkLab_v5.64_Schematic_${Date.now()}.png`; a.click();
+      } catch (_) {
+        exportToast('Could not export the circuit image.');
+      }
+    }
 
-      builderWires.forEach(w => {
-        const p1 = getTerminalCenter(w.from.compId, w.from.term), p2 = getTerminalCenter(w.to.compId, w.to.term);
-        if (!p1 || !p2) return;
-        ctx.strokeStyle = w.color || '#22d3ee'; ctx.lineWidth = 3;
-        ctx.beginPath(); const dx=Math.abs(p2.x-p1.x)*0.5;
-        ctx.moveTo(p1.x,p1.y); ctx.bezierCurveTo(p1.x+dx,p1.y,p2.x-dx,p2.y,p2.x,p2.y); ctx.stroke();
+    // v5.63: Export/Share now capture the live #builder-canvas DOM (via
+    // html2canvas) instead of hand-redrawing generic boxes + curved lines.
+    // This makes the exported/shared PNG match exactly what the user sees
+    // in the Builder — real component symbols, dashed glowing wires with
+    // their actual colors/routing, and green terminal dots — rather than a
+    // simplified re-interpretation of the circuit.
+    async function buildCircuitExportCanvas() {
+      const TITLE_H = 34, FOOTER_H = 34; // CSS px, added above/below the captured canvas
+      const canvasEl = document.getElementById('builder-canvas');
+      const scale = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+
+      // Hide elements that are canvas *tools*, not circuit content, so the
+      // exported image is a clean schematic rather than a screenshot of the
+      // editor chrome. The multimeter probes are the only such overlay.
+      const hideSelectors = ['#probe-red', '#probe-black'];
+      const restoreList = [];
+      hideSelectors.forEach(sel => {
+        const el = canvasEl.querySelector(sel);
+        if (el) { restoreList.push([el, el.style.display]); el.style.display = 'none'; }
       });
-      builderCanvasComps.forEach(c => {
-        ctx.save(); ctx.translate(c.x+70,c.y+35); ctx.rotate((Number(c.rotation)||0)*Math.PI/180);
-        ctx.fillStyle='#0f172a'; ctx.strokeStyle=c.isOn||c.isSpinning?'#34d399':'#06b6d4'; ctx.lineWidth=2;
-        ctx.fillRect(-65,-30,130,60); ctx.strokeRect(-65,-30,130,60);
-        ctx.fillStyle='#e2e8f0'; ctx.font='bold 10px monospace'; ctx.textAlign='center'; ctx.fillText(c.name||c.type,0,-2);
-        if(c.type==='resistor') ctx.fillText(`${c.r}Ω`,0,14);
-        if(c.type==='source') ctx.fillText(`${c.v}V`,0,14);
-        if(c.type==='led') ctx.fillText(c.isOn?'ON':'OFF',0,14);
-        ctx.restore();
-      });
+
+      let captured;
+      try {
+        captured = await html2canvas(canvasEl, {
+          backgroundColor: '#020617',
+          scale,
+          useCORS: true,
+          logging: false
+        });
+      } finally {
+        restoreList.forEach(([el, disp]) => { el.style.display = disp; });
+      }
+
+      const totalW = captured.width;
+      const totalH = captured.height + Math.round((TITLE_H + FOOTER_H) * scale);
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width = totalW;
+      exportCanvas.height = totalH;
+      const ctx = exportCanvas.getContext('2d');
+      ctx.fillStyle = '#020617';
+      ctx.fillRect(0, 0, totalW, totalH);
+
+      ctx.font = `bold ${Math.round(13 * scale)}px monospace`;
+      ctx.fillStyle = '#94a3b8';
+      ctx.textAlign = 'left';
+      ctx.fillText('NIL SparkLab — Circuit Schematic', 14 * scale, 22 * scale);
+
+      ctx.drawImage(captured, 0, Math.round(TITLE_H * scale));
+
+      ctx.font = `${Math.round(10 * scale)}px monospace`;
+      ctx.fillStyle = '#475569';
+      ctx.textAlign = 'center';
+      ctx.fillText('Made with NIL SparkLab · nilsparklab.github.io', totalW / 2, totalH - 12 * scale);
+
       return exportCanvas;
     }
 
-    function shareCircuitPNG() {
+    async function shareCircuitPNG() {
       safeSound('click');
-      const finish = () => { try { buildCircuitExportCanvas().toBlob(blob => {
-        if (!blob) { toast('Could not prepare the circuit image.'); return; }
+      if (typeof html2canvas !== 'function') { exportToast('Sharing image library failed to load. Check your connection and try again.'); return; }
+      // v5.64: navigator.share requires a secure context (https:// or
+      // localhost). Opening this file directly from Downloads/local storage
+      // (file:// or content://) is NOT a secure context, so sharing silently
+      // has no native share sheet available — fall through to a plain
+      // download instead of leaving the user with no feedback at all.
+      const insecureContext = typeof window.isSecureContext === 'boolean' && !window.isSecureContext;
+      let canvas;
+      try {
+        canvas = await buildCircuitExportCanvas();
+      } catch (_) {
+        exportToast('Could not prepare the circuit image.');
+        return;
+      }
+      canvas.toBlob(blob => {
+        if (!blob) { exportToast('Could not prepare the circuit image.'); return; }
         const file = new File([blob], `NilSparkLab_Circuit_${Date.now()}.png`, { type: 'image/png' });
         const shareData = { files: [file], title: 'NIL SparkLab Circuit', text: 'Check out this circuit I built in NIL SparkLab!' };
-        if (navigator.canShare && navigator.canShare(shareData) && navigator.share) {
+        const canUseNativeShare = !insecureContext && navigator.canShare && navigator.canShare(shareData) && navigator.share;
+        if (canUseNativeShare) {
           navigator.share(shareData).catch(() => {});
         } else {
           const a = document.createElement('a');
           a.href = URL.createObjectURL(blob);
           a.download = file.name;
           a.click();
-          toast('Sharing is not supported on this browser — image downloaded instead. You can attach it to WhatsApp/Email manually.');
+          exportToast(insecureContext
+            ? 'Sharing needs the site opened over https (not a local file) — image downloaded instead. You can attach it to WhatsApp/Email manually.'
+            : 'Sharing is not supported on this browser — image downloaded instead. You can attach it to WhatsApp/Email manually.');
         }
-      }, 'image/png'); } catch (_) { toast('Could not share the circuit.'); } };
-      finish();
+      }, 'image/png');
     }
 
     function exportCircuitJSON() {
@@ -13254,8 +13357,6 @@ document.addEventListener("DOMContentLoaded",function(){
       Object.keys(a.checks).forEach(function(k){if(!a.checks[k])missing.push(k);});
       if(window.nslV575Toast){
         window.nslV575Toast("Final audit: "+a.passed+"/"+a.total+" modules"+(missing.length?" · Missing: "+missing.join(", "):" · All modules ready"));
-      }else{
-        console.log("NilSparkLab Final Audit",a);
       }
     }
   };
@@ -13740,8 +13841,8 @@ box-shadow:0 12px 32px rgba(34,211,238,.55)
 #nsl-smart-assistant-btn:active{transform:scale(.95)}
 #nsl-sa-overlay{
 position:fixed;inset:0;z-index:11975;
-background:rgba(2,6,23,.5);
-backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);
+background:rgba(2,6,23,.4);
+backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);
 opacity:0;pointer-events:none;
 transition:opacity .25s ease;
 }
@@ -14125,7 +14226,7 @@ background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.3);color:#67e8f
     {keys:["battery","source","voltage","9v","power nahi","battery kaise"], a:"Battery/DC source circuit ki energy deta hai. Properties se voltage badlo. Polarity sahi rakho — LED aur diode polarity sensitive hote hain."},
     {keys:["quiz","exam","test","paper","sawal"], a:"Quiz section scored questions deta hai. Pehle Components + ek practical complete karke quiz do — score better aata hai."},
     {keys:["share","link","bhejo","qr","share karo","bhejna"], a:"Simulate ke baad Health panel se Copy Share Link, ya right side ▣ se QR banao. Link WhatsApp/classroom pe bhej sakte ho."},
-    {keys:["hello","hi","namaste","help","madad","hello bhai","hey","kaise ho","assistant"], a:"Namaste! Main tumhara NIL SparkLab coach hoon — Hinglish mein bhi pooch sakte ho. Example: \"led nahi jal raha\", \"wire kaise banaye\", \"ohm ka niyam\". Neeche chips bhi try karo."},
+    {keys:["hello","hi","namaste","help","madad","hello bhai","hey","kaise ho","assistant"], a:"Namaste! NIL SparkLab mein aapka swagat hai. Yahan aap Electric World explore kar sakte hain — koi bhi sawal pooch sakte hain, jaise \"LED nahi jal raha\" ya \"Ohm ka niyam\". Neeche diye gaye suggestions bhi try kar sakte hain."},
     {keys:["motor","dc motor","motor nahi"], a:"DC motor load hai. Battery + switch + motor se basic drive banao. Preset: Motor + Switch. Guided 🎓 se bhi steps milenge."},
     {keys:["capacitor","rc","charging","capacitor kya"], a:"Capacitor energy store karta hai. RC charging mein time constant τ = R×C. Practical Lab mein experiment try karo."},
     {keys:["multimeter","measure","voltage measure","current measure","meter"], a:"Learning Lab → Multimeter. Probes canvas pe drag karke V / mA / continuity mode select karo."},
@@ -17644,7 +17745,7 @@ cursor:pointer;
 <div aria-hidden="true" id="nsl-v81-admin-panel">
 <div aria-labelledby="nsl-v81-admin-title" aria-modal="true" id="nsl-v81-admin-card" role="dialog">
 <h2 id="nsl-v81-admin-title">NIL SparkLab Owner Analytics</h2>
-<div style="opacity:.7;font-size:12px">v8.1 • owner-only local analytics foundation</div>
+<div style="opacity:.7;font-size:12px">Local analytics — visible only to you, stored on this device</div>
 <div class="nsl-v81-grid">
 <div class="nsl-v81-stat">Sessions<b id="nsl-v81-sessions">0</b></div>
 <div class="nsl-v81-stat">Events<b id="nsl-v81-events-count">0</b></div>
@@ -19307,7 +19408,7 @@ box-shadow:0 20px 40px rgba(0,0,0,.4)
 (function(){
   "use strict";
 
-  function toast(m){ if(window.nslV575Toast) nslV575Toast(m); else try{ console.log(m);}catch(e){} }
+  function toast(m){ if(window.nslV575Toast) nslV575Toast(m); }
   function goBuilder(){ if(typeof window.showSection==="function") window.showSection("builder"); }
 
   /* ========== 1. Natural Language Circuit Builder ========== */
@@ -26680,6 +26781,11 @@ window.NilSparkLabSafeWifiV1013={
   // window.NIL_SPARKLAB_API_BASE = 'PASTE_YOUR_WORKER_URL_HERE';
 </script>
 <script src="js/vendor/qrcode.min.js"></script>
+<!-- v5.64: html2canvas is used only to make Export/Share PNG capture the
+     Builder canvas exactly as it renders on screen (real component symbols,
+     glowing dashed wires, green terminals) instead of the old simplified
+     redraw. Same-origin only — not part of the offline precache list. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="js/api/api-config.js"></script>
 <script src="js/api/api-response.js"></script>
 <script src="js/api/api-client.js"></script>
@@ -27986,24 +28092,10 @@ color:#5b6b84;
 <span class="nsl-site-footer-sep">·</span>
 <span>Learn · Build · Simulate · Troubleshoot</span>
 <span class="nsl-site-footer-sep">·</span>
-<span id="nsl-footer-version"></span>
-<span class="nsl-site-footer-sep">·</span>
 <a href="/privacy/" style="color:inherit;text-decoration:underline">Privacy Policy</a>
 <span class="nsl-site-footer-sep">·</span>
 <a href="/terms/" style="color:inherit;text-decoration:underline">Terms of Service</a>
 </div>
 </footer>
-<script>
-  /* Single source of truth for the visible version badge: reads the same
-     frozen config object used by the Lab Report / project save format
-     (js/config/app-config.js), so this never drifts out of sync again. */
-  (function () {
-    try {
-      var el = document.getElementById('nsl-footer-version');
-      var v = (window.NilSparkLabConfig && window.NilSparkLabConfig.version) || '';
-      if (el && v) el.textContent = 'v' + v;
-    } catch (_) {}
-  })();
-</script>
 </body>
 </html>
