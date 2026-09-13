@@ -772,11 +772,11 @@ font-size:12px!important;
 </style>
 <meta content="11.0" name="nilsparklab-version"/>
 <style id="nsl-v575-layout-bugfix">
-#nsl-status-pill, #nsl-floating-status, .nsl-status-pill, [data-nsl-status-pill]{
+#nsl-floating-status, .nsl-status-pill, [data-nsl-status-pill]{
 max-width:calc(100vw - 28px);
 }
 @media(max-width:640px){
-#nsl-status-pill, #nsl-floating-status, .nsl-status-pill, [data-nsl-status-pill]{
+#nsl-floating-status, .nsl-status-pill, [data-nsl-status-pill]{
 bottom:calc(10px + env(safe-area-inset-bottom))!important;
 right:10px!important;
 z-index:800!important;
@@ -3200,32 +3200,31 @@ animation:nslHeroIn .5s cubic-bezier(.22,1,.36,1) both;
 </script>
 <style>
 #nsl-status-pill{
-position:fixed;top:10px;left:50%;transform:translateX(-50%) scale(.85);z-index:9998;
-display:none;align-items:center;gap:6px;font-size:11px;font-weight:700;
-padding:5px 12px;border-radius:999px;font-family:'Inter',ui-sans-serif,system-ui,sans-serif;
-opacity:0;transition:opacity .25s ease, transform .25s ease;
-box-shadow:0 4px 14px rgba(0,0,0,.35);
+display:none;align-items:center;gap:4px;font-size:9px;line-height:1;font-weight:700;
+padding:2px 7px;border-radius:999px;font-family:'Inter',ui-sans-serif,system-ui,sans-serif;
+opacity:0;transform:scale(.9);transition:opacity .25s ease, transform .25s ease;
+vertical-align:middle;white-space:nowrap;
 }
-#nsl-status-pill.nsl-pill-show{opacity:1;transform:translateX(-50%) scale(1);}
+#nsl-status-pill.nsl-pill-show{opacity:1;transform:scale(1);}
 #nsl-status-pill.nsl-pill-offline{background:#78350f;color:#fde68a;border:1px solid rgba(253,230,138,.35);}
 #nsl-status-pill.nsl-pill-online{background:#064e3b;color:#a7f3d0;border:1px solid rgba(167,243,208,.35);}
 </style>
 <div id="nsl-offline-banner" role="status" aria-live="polite" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9998;background:#78350f;color:#fef3c7;font-size:12px;font-weight:600;text-align:center;padding:7px 12px;font-family:'Inter',ui-sans-serif,system-ui,sans-serif;">
 ⚠ You're offline — Circuit Builder, Components &amp; Quizzes still work. Smart Assistant/Search needs internet.
 </div>
-<div id="nsl-status-pill" role="status" aria-live="polite"></div>
 <script>
 (function(){
   "use strict";
   var banner=document.getElementById('nsl-offline-banner');
-  var pill=document.getElementById('nsl-status-pill');
   var shrinkTimer=null, hideTimer=null;
+  function pillEl(){ return document.getElementById('nsl-status-pill'); }
 
   function clearTimers(){
     if(shrinkTimer){clearTimeout(shrinkTimer);shrinkTimer=null;}
     if(hideTimer){clearTimeout(hideTimer);hideTimer=null;}
   }
   function resetPill(){
+    var pill=pillEl(); if(!pill) return;
     pill.classList.remove('nsl-pill-show','nsl-pill-offline','nsl-pill-online');
     pill.style.display='none';
   }
@@ -3235,6 +3234,7 @@ box-shadow:0 4px 14px rgba(0,0,0,.35);
     banner.style.display='block';
     shrinkTimer=setTimeout(function(){
       banner.style.display='none';
+      var pill=pillEl(); if(!pill) return;
       pill.textContent='🔸 Offline';
       pill.className='nsl-pill-offline';
       pill.style.display='flex';
@@ -3244,6 +3244,7 @@ box-shadow:0 4px 14px rgba(0,0,0,.35);
   function showOnlineBadge(){
     clearTimers();
     banner.style.display='none';
+    var pill=pillEl(); if(!pill) return;
     pill.textContent='🔹 Online';
     pill.className='nsl-pill-online';
     pill.style.display='flex';
@@ -3258,7 +3259,11 @@ box-shadow:0 4px 14px rgba(0,0,0,.35);
   }
   window.addEventListener('offline', showFullOffline);
   window.addEventListener('online', showOnlineBadge);
-  renderInitial();
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', renderInitial);
+  } else {
+    renderInitial();
+  }
 })();
 </script>
 <script id="nsl-v103-panel-autoclose">
@@ -3319,6 +3324,7 @@ box-shadow:0 4px 14px rgba(0,0,0,.35);
 <div>
 <span class="text-lg font-black tracking-tight text-white flex items-center gap-2">
 NIL SparkLab
+<span id="nsl-status-pill" role="status" aria-live="polite"></span>
 </span>
 <p class="text-[10px] text-slate-400 font-medium" data-i18n="tagline">Learn • Build • Simulate • Troubleshoot</p>
 </div>
