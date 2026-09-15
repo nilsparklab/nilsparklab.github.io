@@ -7664,7 +7664,7 @@ Score: <span class="font-bold" id="quiz-score">0</span>
       const add=(a,b,meta=null,directed=false)=>{if(!nodeEdges.has(a))nodeEdges.set(a,[]);if(!nodeEdges.has(b))nodeEdges.set(b,[]);nodeEdges.get(a).push({to:b,meta});if(!directed)nodeEdges.get(b).push({to:a,meta});};
       const key=(id,t)=>`${id}:${t}`;
       builderWires.forEach(w=>{if(w?.from&&w?.to)add(key(w.from.compId,w.from.term),key(w.to.compId,w.to.term),{kind:'wire'});});
-      const passive2=new Set(['resistor','ldr','thermistor','thermistor_ptc','pt100','motor','inductor','relay','buzzer','fuse','lamp']);
+      const passive2=new Set(['resistor','ldr','thermistor','thermistor_ptc','pt100','motor','inductor','relay','buzzer','fuse','lamp','capacitor']);
       builderCanvasComps.forEach(c=>{
         if(c.type==='switch' || c.type==='push_button' || c.type==='reed_switch' || c.type==='mcb') { if(c.type!=='mcb' ? c.closed : (!c.tripped && c.closed !== false)) add(key(c.id,c.terminals[0]),key(c.id,c.terminals[1]),{kind:'component',compId:c.id}); return; }
         if(c.type==='dpdt_switch'){
@@ -7675,7 +7675,12 @@ Score: <span class="font-bold" id="quiz-score">0</span>
         }
         if(c.type==='fuse' && (c.blown||c.isBlown)) return;
         if(c.type==='potentiometer'){add(key(c.id,'Pin 1'),key(c.id,'Wiper'),{kind:'component',compId:c.id});add(key(c.id,'Wiper'),key(c.id,'Pin 3'),{kind:'component',compId:c.id});return;}
-        if(c.type==='led' || c.type==='diode'){add(key(c.id,'Anode (+)'),key(c.id,'Cathode (-)'),{kind:'component',compId:c.id},true);return;}
+        // v5.91 fix: a zener conducts in reverse breakdown by design — that's
+        // the whole point of a zener regulator — so its path-tracer edge
+        // must be bidirectional. A plain diode/LED stays one-way (forward
+        // Anode→Cathode only) so a reversed plain diode still correctly
+        // blocks the circuit in that teaching scenario.
+        if(c.type==='led' || c.type==='diode'){add(key(c.id,'Anode (+)'),key(c.id,'Cathode (-)'),{kind:'component',compId:c.id},c.deviceKind!=='zener');return;}
         if(c.type==='bridge_rectifier'){add(key(c.id,'AC1'),key(c.id,'DC+'),{kind:'component',compId:c.id},true);add(key(c.id,'AC2'),key(c.id,'DC+'),{kind:'component',compId:c.id},true);add(key(c.id,'DC-'),key(c.id,'AC1'),{kind:'component',compId:c.id},true);add(key(c.id,'DC-'),key(c.id,'AC2'),{kind:'component',compId:c.id},true);return;}
         if(passive2.has(c.type)){const ts=c.terminals||[];if(ts.length>=2)add(key(c.id,ts[0]),key(c.id,ts[1]),{kind:'component',compId:c.id});}
       });
@@ -7764,6 +7769,105 @@ Score: <span class="font-bold" id="quiz-score">0</span>
         node=prev.get(node);
       }
       return {closed:true,componentIds,diodeIds};
+    }
+
+    // v5.88: dedicated half-wave rectifier solver. Reuses the same AC-path
+    // graph search as the bridge case (findACRectifierPath already walks
+    // through a diode correctly, Anode→Cathode only), but applies the
+    // half-wave average-DC formula instead of the full-wave one — a single
+    // diode only conducts for half the AC cycle, so it is not "a bridge
+    // with fewer diodes", it needs its own formula (Vdc ≈ 0.45×Vrms, not
+    // 0.9×Vrms) and a single diode-drop, not two.
+    function runHalfWaveRectifierSim(acSource){
+      const path=findACRectifierPath(acSource);
+      builderCanvasComps.forEach(c=>{
+        if(c.type==='led') c.isOn=false;
+        if(c.type==='motor') c.isSpinning=false;
+        if(c.type==='buzzer') c.isOn=false;
+        if(c.type==='relay') c.energized=false;
+      });
+      if(!path.closed){
+        isSimRunning=false;
+        SoundEngine.playBeep(400,0.2);
+        showSimulationStatus(
+          "<span class='text-slate-400 font-bold'>⚡ AC Rectifier Path Open:</span> Connect AC L → diode (Anode→Cathode) → load → AC N.",
+          "Half-wave rectifier path not closed"
+        );
+        updateSmartFromSimulation(Number(acSource.v)||0,0,0,'OPEN','AC source detected, but the diode/load return path is not closed.','ERROR');
+        renderBuilderCanvas();
+        return;
+      }
+      const active=builderCanvasComps.filter(c=>path.componentIds.has(c.id));
+      const resistive=active.filter(c=>['resistor','motor','buzzer','relay','inductor','fuse','ldr','thermistor_ptc','pt100','lamp'].includes(c.type));
+      const leds=active.filter(c=>c.type==='led');
+      const diodes=active.filter(c=>c.type==='diode');
+      const vrms=Math.max(0,Number(acSource.v)||0);
+      const diodeDrop=leds.reduce((a,c)=>a+Math.max(0,Number(c.vf)||0),0)+diodes.reduce((a,c)=>a+Math.max(0,Number(c.vf)||0),0);
+      const vdc=Math.max(0,0.45*vrms-diodeDrop);
+      let totalR=0;
+      resistive.forEach(c=>{
+        let r=Number(c.r);
+        if(c.type==='relay') r=Number(c.coilR)||120;
+        else if(c.type==='motor') r=Number(c.r)||20;
+        else if(c.type==='buzzer') r=Number(c.r)||40;
+        else if(c.type==='inductor') r=Number(c.r)||0.5;
+        else if(c.type==='fuse') r=c.blown?1e9:(Number(c.r)||0.1);
+        else if(c.type==='lamp') r=Number(c.r)||2300;
+        else if(!Number.isFinite(r)||r<=0) r=Number(c.r)||0;
+        if(Number.isFinite(r)&&r>0) totalR+=r;
+      });
+      if(totalR<=0){
+        isSimRunning=false; safeSound('spark');
+        showSimulationStatus(
+          "<span class='text-rose-500 font-bold animate-pulse'>💥 Rectifier output short / no current limiting load.</span>",
+          "Add a resistor or another valid load in series with the diode"
+        );
+        updateSmartFromSimulation(vdc,0,0,'CHECK','Half-wave output has no usable current-limiting resistance.','ERROR');
+        renderBuilderCanvas();
+        return;
+      }
+      const currentA=vdc/totalR, currentmA=currentA*1000;
+      if(currentmA>2000){
+        isSimRunning=false; safeSound('spark');
+        showSimulationStatus(
+          "<span class='text-rose-500 font-bold animate-pulse'>🛑 OVERCURRENT TRIP!</span> Half-wave load current exceeded 2.00 A.",
+          `I = ${currentmA.toFixed(0)} mA | Limit = 2000 mA`
+        );
+        updateSmartFromSimulation(vdc,0,0,'CHECK','Half-wave load current exceeded the 2.00 A virtual protection limit.','ERROR');
+        renderBuilderCanvas();
+        return;
+      }
+      isSimRunning=true;
+      SoundEngine.playBeep(1200,0.1);
+      simulationTelemetry=new Map();
+      resistive.forEach(c=>{
+        let r=Number(c.r);
+        if(c.type==='relay') r=Number(c.coilR)||120;
+        else if(c.type==='motor') r=Number(c.r)||20;
+        else if(c.type==='buzzer') r=Number(c.r)||40;
+        else if(c.type==='inductor') r=Number(c.r)||0.5;
+        else if(c.type==='fuse') r=c.blown?1e9:(Number(c.r)||0.1);
+        const vd=currentA*Math.max(r,0.000001);
+        c.simVoltage=vd; c.simCurrent=currentA; c.simPower=vd*currentA;
+        simulationTelemetry.set(c.id,{voltage:vd,current:currentA,power:vd*currentA,resistance:r});
+        if(c.type==='motor') c.isSpinning=true;
+        if(c.type==='buzzer') c.isOn=true;
+        if(c.type==='relay') c.energized=true;
+      });
+      leds.forEach(c=>{
+        c.simVoltage=Math.max(0,Number(c.vf)||0); c.simCurrent=currentA; c.simPower=c.simVoltage*currentA; c.isOn=currentA>0.000001;
+        simulationTelemetry.set(c.id,{voltage:c.simVoltage,current:currentA,power:c.simPower,resistance:0});
+      });
+      diodes.forEach(c=>{
+        c.simVoltage=Math.max(0,Number(c.vf)||0); c.simCurrent=currentA; c.simPower=c.simVoltage*currentA;
+        simulationTelemetry.set(c.id,{voltage:c.simVoltage,current:currentA,power:c.simPower,resistance:0});
+      });
+      showSimulationStatus(
+        "<span class='text-emerald-400 font-bold'>✓ Half-Wave Rectifier Active.</span> Diode conducts on one half-cycle only; load current from the educational average-DC model.",
+        `Vrms = ${vrms.toFixed(2)} V | VDC(avg) ≈ ${vdc.toFixed(2)} V | I ≈ ${currentmA.toFixed(2)} mA`
+      );
+      updateSmartFromSimulation(vdc,currentA,vdc*currentA,'OK',`Half-wave rectifier detected. Approx. VDC(avg) = 0.45×Vrms − Vd = ${vdc.toFixed(2)} V.`);
+      renderBuilderCanvas();
     }
 
     function runBridgeRectifierSim(acSource) {
@@ -7966,7 +8070,7 @@ Score: <span class="font-bold" id="quiz-score">0</span>
       const adj=new Map(), add=(u,v)=>{if(!adj.has(u))adj.set(u,[]);if(!adj.has(v))adj.set(v,[]);adj.get(u).push(v);adj.get(v).push(u);};
       const key=(id,t)=>`${id}:${t}`;
       builderWires.forEach(w=>{if(w?.from&&w?.to)add(key(w.from.compId,w.from.term),key(w.to.compId,w.to.term));});
-      const passive2=new Set(['resistor','ldr','thermistor','thermistor_ptc','pt100','motor','inductor','relay','buzzer','fuse','lamp']);
+      const passive2=new Set(['resistor','ldr','thermistor','thermistor_ptc','pt100','motor','inductor','relay','buzzer','fuse','lamp','capacitor']);
       builderCanvasComps.forEach(c=>{
         if(c.type==='switch'||c.type==='push_button'||c.type==='reed_switch'||c.type==='mcb'){if(c.type==='mcb' ? (!c.tripped && c.closed !== false) : c.closed)add(key(c.id,c.terminals[0]),key(c.id,c.terminals[1]));return;}
         if(c.type==='dpdt_switch'){if(c.position){add(key(c.id,'COM1'),key(c.id,'NC1'));add(key(c.id,'COM2'),key(c.id,'NC2'));}else{add(key(c.id,'COM1'),key(c.id,'NO1'));add(key(c.id,'COM2'),key(c.id,'NO2'));}return;}
@@ -8083,6 +8187,18 @@ Score: <span class="font-bold" id="quiz-score">0</span>
       for(const c of builderCanvasComps){if(!types.has(c.type)||!Array.isArray(c.terminals)||c.terminals.length<2)continue;const a=resolver.find(resolver.key(c.id,c.terminals[0])),b=resolver.find(resolver.key(c.id,c.terminals[1]));if((a===node&&b===neg)||(b===node&&a===neg)){if(found)return null;found=c;}}
       return found;
     }
+    // v5.88 fix: the NMOS low-side switch needs the MIRROR of classicLoadToGround.
+    // In a real low-side switch the load sits between +supply and the Drain
+    // (Vcc -> load -> Drain -> channel -> grounded Source), not between Drain
+    // and ground — classicLoadToGround was written for the PNP high-side case
+    // (Emitter at Vcc, load from Collector to ground) and doesn't fit NMOS.
+    function classicLoadFromSupply(resolver,battery,node){
+      const pos=resolver.find(resolver.key(battery.id,'+ (Pos)'));
+      const types=new Set(['resistor','motor','buzzer','relay','lamp','ldr']);
+      let found=null;
+      for(const c of builderCanvasComps){if(!types.has(c.type)||!Array.isArray(c.terminals)||c.terminals.length<2)continue;const a=resolver.find(resolver.key(c.id,c.terminals[0])),b=resolver.find(resolver.key(c.id,c.terminals[1]));if((a===pos&&b===node)||(b===pos&&a===node)){if(found)return null;found=c;}}
+      return found;
+    }
     function loadResistance(c){if(!c)return Infinity;if(c.type==='relay')return Math.max(10,Number(c.coilR)||120);if(c.type==='motor')return Math.max(1,Number(c.r)||20);if(c.type==='buzzer')return Math.max(1,Number(c.r)||40);return Math.max(.01,Number(c.r)||100);}
     function solvePnpHighSideSwitch(battery,tr){
       if(!battery||!tr)return null;const R=buildNodeResolver(),pos=R.find(R.key(battery.id,'+ (Pos)')),neg=R.find(R.key(battery.id,'- (Gnd)'));
@@ -8096,7 +8212,97 @@ Score: <span class="font-bold" id="quiz-score">0</span>
       const G=R.find(R.key(tr.id,'Gate (G)')),D=R.find(R.key(tr.id,'Drain (D)')),S=R.find(R.key(tr.id,'Source (S)'));if(S!==neg)return null;
       // Gate drive must be explicitly tied to the positive rail through a resistor or directly.
       let gateDriven=(G===pos); if(!gateDriven){for(const c of builderCanvasComps){if(c.type!=='resistor'||!Array.isArray(c.terminals)||c.terminals.length<2)continue;const a=R.find(R.key(c.id,c.terminals[0])),b=R.find(R.key(c.id,c.terminals[1]));if((a===G&&b===pos)||(b===G&&a===pos)){gateDriven=true;break;}}}
-      const load=classicLoadToGround(R,battery,D);if(!gateDriven||!load)return null;const Vcc=Number(battery.v)||0,Vth=Math.max(.1,Number(tr.vth)||3),Rds=Math.max(.001,Number(tr.rdsOn)||.05),Rload=loadResistance(load),Vgs=Vcc,on=Vgs>=Vth,I=on?Math.max(0,Vcc/(Rload+Rds)):0;return {on,region:on?'ON':'CUTOFF',Vgs,Vth,Ic:I,Id:I,Vds:on?I*Rds:Vcc,loadComp:load,Vcc};
+      const load=classicLoadFromSupply(R,battery,D);if(!gateDriven||!load)return null;const Vcc=Number(battery.v)||0,Vth=Math.max(.1,Number(tr.vth)||3),Rds=Math.max(.001,Number(tr.rdsOn)||.05),Rload=loadResistance(load),Vgs=Vcc,on=Vgs>=Vth,I=on?Math.max(0,Vcc/(Rload+Rds)):0;return {on,region:on?'ON':'CUTOFF',Vgs,Vth,Ic:I,Id:I,Vds:on?I*Rds:Vcc,loadComp:load,Vcc};
+    }
+
+    // v5.88: dedicated 7805 linear-regulator solver. Recognizes IN tied to
+    // +supply, GND tied to −supply, and a single load resistor from OUT to
+    // −supply. Models the classic dropout behaviour: if Vin doesn't clear
+    // Vout + ~2V headroom, the regulator can't hold regulation and output
+    // just follows (Vin − dropout) instead of the rated Vout.
+    function solve7805Regulator(battery,reg){
+      if(!battery||!reg)return null;
+      const R=buildNodeResolver(),pos=R.find(R.key(battery.id,'+ (Pos)')),neg=R.find(R.key(battery.id,'- (Gnd)'));
+      const IN=R.find(R.key(reg.id,'IN')),GND=R.find(R.key(reg.id,'GND')),OUT=R.find(R.key(reg.id,'OUT'));
+      if(IN!==pos||GND!==neg)return null;
+      const load=classicLoadToGround(R,battery,OUT);
+      if(!load)return null;
+      const Vin=Number(battery.v)||0,VoutRated=Math.max(0,Number(reg.vout)||5),dropout=2,Rload=loadResistance(load);
+      const regulating=Vin>=(VoutRated+dropout);
+      const Vout=regulating?VoutRated:Math.max(0,Vin-dropout);
+      const I=Rload>0?Vout/Rload:0;
+      return {regulating,Vin,Vout,I,loadComp:load,Rload};
+    }
+
+    // v5.88: ideal-op-amp DC solvers for the classic inverting and
+    // non-inverting configurations. Both resolve nodes with the same
+    // union-find resolver the transistor/MOSFET solvers use (rather than
+    // checkCircuitClosedLoop, which doesn't model an op-amp's internal
+    // output stage as a conductor). Output is clamped to the supply rails —
+    // a single-rail supply (V− tied to ground) genuinely can't swing
+    // negative, so a saturated-at-the-rail result is the physically correct
+    // answer here, not an error.
+    function solveOpAmpInverting(battery,op){
+      if(!battery||!op)return null;
+      const R=buildNodeResolver(),pos=R.find(R.key(battery.id,'+ (Pos)')),neg=R.find(R.key(battery.id,'- (Gnd)'));
+      const Vp=R.find(R.key(op.id,'V+')),Vm=R.find(R.key(op.id,'V-'));
+      if(Vp!==pos||Vm!==neg)return null;
+      const inMinus=R.find(R.key(op.id,'IN-')),inPlus=R.find(R.key(op.id,'IN+')),out=R.find(R.key(op.id,'OUT'));
+      if(inPlus!==neg)return null; // inverting config: non-inverting input at the reference (ground) rail
+      const resistors=builderCanvasComps.filter(c=>c.type==='resistor');
+      let rf=null,rin=null,vinNode=null;
+      for(const c of resistors){
+        const a=R.find(R.key(c.id,'T1')),b=R.find(R.key(c.id,'T2'));
+        if((a===out&&b===inMinus)||(b===out&&a===inMinus)){ if(rf)return null; rf=c; }
+      }
+      if(!rf)return null;
+      for(const c of resistors){
+        if(c===rf)continue;
+        const a=R.find(R.key(c.id,'T1')),b=R.find(R.key(c.id,'T2'));
+        if(a===inMinus){ if(rin)return null; rin=c; vinNode=b; }
+        else if(b===inMinus){ if(rin)return null; rin=c; vinNode=a; }
+      }
+      if(!rin)return null;
+      let vin;
+      if(vinNode===pos) vin=Number(battery.v)||0;
+      else if(vinNode===neg) vin=0;
+      else return null;
+      const Rf=Math.max(1,Number(rf.r)||1),Rin=Math.max(1,Number(rin.r)||1);
+      const gain=-(Rf/Rin), voutIdeal=gain*vin;
+      const railLo=0, railHi=Number(battery.v)||0;
+      const vout=Math.max(railLo,Math.min(railHi,voutIdeal));
+      const saturated=vout!==voutIdeal;
+      return {rf:Rf,rin:Rin,gain,vin,voutIdeal,vout,saturated,railLo,railHi};
+    }
+    function solveOpAmpNonInverting(battery,op){
+      if(!battery||!op)return null;
+      const R=buildNodeResolver(),pos=R.find(R.key(battery.id,'+ (Pos)')),neg=R.find(R.key(battery.id,'- (Gnd)'));
+      const Vp=R.find(R.key(op.id,'V+')),Vm=R.find(R.key(op.id,'V-'));
+      if(Vp!==pos||Vm!==neg)return null;
+      const inMinus=R.find(R.key(op.id,'IN-')),inPlus=R.find(R.key(op.id,'IN+')),out=R.find(R.key(op.id,'OUT'));
+      let vin;
+      if(inPlus===pos) vin=Number(battery.v)||0;
+      else if(inPlus===neg) vin=0;
+      else return null; // needs a resolvable reference (this simplified model has no separate signal source)
+      const resistors=builderCanvasComps.filter(c=>c.type==='resistor');
+      let rf=null,r2=null;
+      for(const c of resistors){
+        const a=R.find(R.key(c.id,'T1')),b=R.find(R.key(c.id,'T2'));
+        if((a===out&&b===inMinus)||(b===out&&a===inMinus)){ if(rf)return null; rf=c; }
+      }
+      if(!rf)return null;
+      for(const c of resistors){
+        if(c===rf)continue;
+        const a=R.find(R.key(c.id,'T1')),b=R.find(R.key(c.id,'T2'));
+        if((a===inMinus&&b===neg)||(b===inMinus&&a===neg)){ if(r2)return null; r2=c; }
+      }
+      if(!r2)return null;
+      const Rf=Math.max(1,Number(rf.r)||1),R2=Math.max(1,Number(r2.r)||1);
+      const gain=1+(Rf/R2), voutIdeal=gain*vin;
+      const railLo=0, railHi=Number(battery.v)||0;
+      const vout=Math.max(railLo,Math.min(railHi,voutIdeal));
+      const saturated=vout!==voutIdeal;
+      return {rf:Rf,r2:R2,gain,vin,voutIdeal,vout,saturated,railLo,railHi};
     }
 
     // v5.55: nodal DC solver for resistor/switch/fuse networks. This replaces the
@@ -8394,6 +8600,16 @@ Score: <span class="font-bold" id="quiz-score">0</span>
         runBridgeRectifierSim(acSource);
         return;
       }
+      // v5.88: AC source with fewer than 4 diodes and no bridge module is a
+      // half-wave rectifier, not "not enough diodes for a bridge" — give it
+      // its own solver instead of falling through to the DC-battery path,
+      // which doesn't recognize ac_source as a source at all.
+      const hasHalfWaveNetwork = !!acSource && !hasBridgeNetwork &&
+        builderCanvasComps.some(c => c.type === 'diode' || c.type === 'led');
+      if (acSource && hasHalfWaveNetwork) {
+        runHalfWaveRectifierSim(acSource);
+        return;
+      }
 
       const smart=runSmartDiagnostics();
       const logicGates = builderCanvasComps.filter(c => c.type === 'logic_gate');
@@ -8434,6 +8650,53 @@ Score: <span class="font-bold" id="quiz-score">0</span>
         if (c.type === 'bjt_npn' || c.type === 'bjt_pnp' || c.type === 'mosfet_n') c.isOn = false;
       });
 
+      // v5.88: dedicated solvers for 7805 regulator and op-amp configs, tried
+      // before the generic "dedicated model required" block below. If the
+      // wiring doesn't match a recognized pattern these simply return null
+      // and the existing fallback message still applies — same approach the
+      // transistor/MOSFET switch solvers already use.
+      if (loop.battery) {
+        const reg7805 = builderCanvasComps.find(c => c.type === 'reg_7805');
+        if (reg7805) {
+          const regResult = solve7805Regulator(loop.battery, reg7805);
+          if (regResult) {
+            isSimRunning = true;
+            SoundEngine.playBeep(1200, 0.1);
+            regResult.loadComp.simVoltage = regResult.Vout;
+            regResult.loadComp.simCurrent = regResult.I;
+            regResult.loadComp.simPower = regResult.Vout * regResult.I;
+            simulationTelemetry.set(reg7805.id, { voltage: regResult.Vin - regResult.Vout, current: regResult.I, power: (regResult.Vin - regResult.Vout) * regResult.I, resistance: 0 });
+            simulationTelemetry.set(regResult.loadComp.id, { voltage: regResult.Vout, current: regResult.I, power: regResult.Vout * regResult.I, resistance: regResult.Rload });
+            const msg = regResult.regulating
+              ? `<span class="text-emerald-400 font-bold">✓ 7805 regulating.</span> Output held at ${regResult.Vout.toFixed(2)} V.`
+              : `<span class="text-amber-300 font-bold">⚠ 7805 in dropout.</span> Vin too low to hold ${(Number(reg7805.vout)||5).toFixed(1)} V — output follows Vin − dropout.`;
+            showSimulationStatus(msg, `Vin = ${regResult.Vin.toFixed(2)} V | Vout = ${regResult.Vout.toFixed(2)} V | I = ${(regResult.I*1000).toFixed(2)} mA`);
+            updateSmartFromSimulation(regResult.Vout, regResult.I, regResult.Vout * regResult.I, regResult.regulating ? 'OK' : 'CHECK', `7805: Vin=${regResult.Vin.toFixed(2)}V → Vout=${regResult.Vout.toFixed(2)}V${regResult.regulating ? ' (regulated)' : ' (dropout — below minimum input headroom)'}.`);
+            renderBuilderCanvas();
+            return;
+          }
+        }
+        const opAmp = builderCanvasComps.find(c => c.type === 'op_amp');
+        if (opAmp) {
+          const inv = solveOpAmpInverting(loop.battery, opAmp);
+          const nonInv = inv ? null : solveOpAmpNonInverting(loop.battery, opAmp);
+          const opResult = inv || nonInv;
+          if (opResult) {
+            isSimRunning = true;
+            SoundEngine.playBeep(1200, 0.1);
+            const kind = inv ? 'Inverting' : 'Non-inverting';
+            const gainTxt = opResult.gain.toFixed(2);
+            const msg = opResult.saturated
+              ? `<span class="text-amber-300 font-bold">⚠ ${kind} op-amp output saturated.</span> Ideal gain × Vin = ${opResult.voutIdeal.toFixed(2)} V is outside the single-supply rails (${opResult.railLo.toFixed(1)}–${opResult.railHi.toFixed(1)} V), so output clamps at the rail.`
+              : `<span class="text-emerald-400 font-bold">✓ ${kind} op-amp solved.</span> Gain = ${gainTxt}.`;
+            showSimulationStatus(msg, `Vin = ${opResult.vin.toFixed(2)} V | Gain = ${gainTxt} | Vout = ${opResult.vout.toFixed(2)} V`);
+            updateSmartFromSimulation(opResult.vout, 0, 0, opResult.saturated ? 'CHECK' : 'OK', `${kind} op-amp: Vin=${opResult.vin.toFixed(2)}V, gain=${gainTxt}, Vout(ideal)=${opResult.voutIdeal.toFixed(2)}V, Vout(clamped)=${opResult.vout.toFixed(2)}V.`, opResult.saturated ? 'WARNING' : 'OK');
+            renderBuilderCanvas();
+            return;
+          }
+        }
+      }
+
       const unsupportedTypes = new Set(['p_mosfet','scr','triac','diac','ic_741','reg_7805','schmitt_trigger','ir_sensor','thermocouple']);
       const wiredComponentIds = new Set();
       builderWires.forEach(w=>{ if(w?.from)wiredComponentIds.add(w.from.compId); if(w?.to)wiredComponentIds.add(w.to.compId); });
@@ -8471,10 +8734,18 @@ Score: <span class="font-bold" id="quiz-score">0</span>
 
       // V6.1: Advanced educational switch models are evaluated before the generic
       // closed-loop test because the transistor/MOSFET channel itself is conditional.
+      // v5.90 fix: NPN (bjt_npn) needs this exact same early bypass — the generic
+      // closed-loop graph below doesn't model any transistor's B/C/E conduction
+      // (only PNP and NMOS had a bypass here before), so an NPN switch circuit like
+      // the Relay Driver always hit the "Open Circuit" fallback further down before
+      // ever reaching the dedicated solveTransistorSwitch() analysis.
       const pnpModels = builderCanvasComps.filter(c=>c.type==='bjt_pnp');
       const nmosModels = builderCanvasComps.filter(c=>c.type==='mosfet_n');
-      const advancedSwitch = pnpModels.length===1 ? solvePnpHighSideSwitch(loop.battery,pnpModels[0]) : (nmosModels.length===1 ? solveNmosLowSideSwitch(loop.battery,nmosModels[0]) : null);
-      const advancedDevice = pnpModels.length===1 ? pnpModels[0] : (nmosModels.length===1 ? nmosModels[0] : null);
+      const npnModels = builderCanvasComps.filter(c=>c.type==='bjt_npn');
+      let advancedSwitch = null, advancedDevice = null, advancedKind = null;
+      if (pnpModels.length===1) { advancedSwitch = solvePnpHighSideSwitch(loop.battery,pnpModels[0]); advancedDevice = pnpModels[0]; advancedKind = 'PNP'; }
+      else if (nmosModels.length===1) { advancedSwitch = solveNmosLowSideSwitch(loop.battery,nmosModels[0]); advancedDevice = nmosModels[0]; advancedKind = 'N-MOSFET'; }
+      else if (npnModels.length===1) { advancedSwitch = solveTransistorSwitch(loop.battery,npnModels[0]); advancedDevice = npnModels[0]; advancedKind = 'NPN'; }
       if (advancedSwitch && advancedDevice) {
         isSimRunning=true; advancedDevice.isOn=advancedSwitch.on;
         const lc=advancedSwitch.loadComp;
@@ -8484,8 +8755,8 @@ Score: <span class="font-bold" id="quiz-score">0</span>
         const current=advancedSwitch.Ic!==undefined?advancedSwitch.Ic:(advancedSwitch.Id||0);
         advancedDevice.simCurrent=current; advancedDevice.simVoltage=advancedSwitch.Vce!==undefined?advancedSwitch.Vce:advancedSwitch.Vds; advancedDevice.simPower=current*advancedDevice.simVoltage;
         lc.simCurrent=current; lc.simVoltage=Math.max(0,(advancedSwitch.Vcc||0)-advancedDevice.simVoltage); lc.simPower=current*lc.simVoltage;
-        showSimulationStatus(`<span class="text-emerald-400 font-bold">✓ ${advancedDevice.type==='bjt_pnp'?'PNP':'N-MOSFET'} ${advancedSwitch.region}:</span> ${advancedSwitch.on?'switch ON':'switch OFF'} — educational switching model active.`, `I = ${(current*1000).toFixed(2)} mA | ${advancedDevice.type==='bjt_pnp'?'VCE':'VDS'} = ${(advancedDevice.simVoltage||0).toFixed(3)} V`);
-        updateSmartFromSimulation(advancedSwitch.Vcc||0,current,current*(advancedSwitch.Vcc||0),'OK',`${advancedDevice.type==='bjt_pnp'?'PNP high-side':'N-MOSFET low-side'} educational switch model: ${advancedSwitch.region}.`);
+        showSimulationStatus(`<span class="text-emerald-400 font-bold">✓ ${advancedKind} ${advancedSwitch.region}:</span> ${advancedSwitch.on?'switch ON':'switch OFF'} — educational switching model active.`, `I = ${(current*1000).toFixed(2)} mA | ${advancedKind==='N-MOSFET'?'VDS':'VCE'} = ${(advancedDevice.simVoltage||0).toFixed(3)} V`);
+        updateSmartFromSimulation(advancedSwitch.Vcc||0,current,current*(advancedSwitch.Vcc||0),'OK',`${advancedKind==='PNP'?'PNP high-side':advancedKind==='N-MOSFET'?'N-MOSFET low-side':'NPN'} educational switch model: ${advancedSwitch.region}.`);
         renderBuilderCanvas(); return;
       }
 
@@ -8552,6 +8823,28 @@ Score: <span class="font-bold" id="quiz-score">0</span>
 
       if (capacitors.length > 0) {
         isSimRunning = false;
+        // v5.89: for the common single-resistor + single-capacitor series
+        // loop (e.g. RC low-pass / high-pass), compute the actual DC
+        // steady-state numbers instead of just noting that the capacitor is
+        // open. The physics is the same either way — at DC steady-state a
+        // charged capacitor draws zero current, so the full source voltage
+        // sits across it and none across the resistor — this just reports
+        // it as a real solved result (I=0, V(C)=Vin) instead of a dead end.
+        if (capacitors.length === 1 && resistors.length === 1 && activePassives.length === 1 && leds.length === 0 && diodes.length === 0 && loop.battery) {
+          const vBatt = Number(loop.battery.v) || 0;
+          const cap = capacitors[0];
+          cap.simVoltage = vBatt; cap.simCurrent = 0; cap.simPower = 0;
+          simulationTelemetry.set(cap.id, { voltage: vBatt, current: 0, power: 0, resistance: Infinity });
+          resistors.forEach(r => {
+            r.simVoltage = 0; r.simCurrent = 0; r.simPower = 0;
+            simulationTelemetry.set(r.id, { voltage: 0, current: 0, power: 0, resistance: Number(r.r) || 0 });
+          });
+          document.getElementById('builder-status-text').innerHTML = `<span class='text-emerald-400 font-bold'>✓ DC steady-state solved.</span> The capacitor is fully charged and blocks DC — no current flows, so the full source voltage sits across the capacitor and none across the resistor.`;
+          document.getElementById('builder-calc-stat').innerText = `I = 0 mA (steady-state) | V(C) = ${vBatt.toFixed(2)} V | V(R) = 0.00 V`;
+          updateSmartFromSimulation(vBatt, 0, 0, 'OK', `DC steady-state: capacitor charged to ${vBatt.toFixed(2)} V, I=0. (This is the correct end-state for an RC filter driven by a fixed DC source — feed an AC/step input to see the filtering behaviour during the transient.)`);
+          renderBuilderCanvas();
+          return;
+        }
         document.getElementById('builder-status-text').innerHTML = `<span class='text-cyan-300 font-bold'>ℹ Capacitor DC steady-state:</span> capacitor behaves as an open circuit after charging. Use a resistor/switch path and the capacitor will be shown as DC-open.`;
         document.getElementById('builder-calc-stat').innerText = 'DC model: C → open circuit';
         updateSmartFromSimulation(loop.battery?.v||0,0,0,'CHECK','Capacitor DC steady-state: capacitor behaves as an open circuit after charging.','WARNING');
@@ -9313,7 +9606,12 @@ Score: <span class="font-bold" id="quiz-score">0</span>
       canvas.toBlob(blob => {
         if (!blob) { exportToast('Could not prepare the circuit image.'); return; }
         const file = new File([blob], `NilSparkLab_Circuit_${Date.now()}.png`, { type: 'image/png' });
-        const shareData = { files: [file], title: 'NIL SparkLab Circuit', text: 'Check out this circuit I built in NIL SparkLab!' };
+        // v5.87: plain homepage link (not a circuit-specific #nsl= link —
+        // that payload can get very long for bigger circuits, and would
+        // point at a local file:// / content:// URL instead of the real
+        // site if shared from a file opened outside the deployed domain).
+        // "Now your turn" adds a light call-to-action for whoever opens it.
+        const shareData = { files: [file], title: 'NIL SparkLab Circuit', text: 'Check out this circuit I built in NIL SparkLab! Now your turn https://nilsparklab.github.io/' };
         const fallbackDownload = (msg) => {
           const a = document.createElement('a');
           a.href = URL.createObjectURL(blob);
@@ -26832,14 +27130,16 @@ window.NilSparkLabSafeWifiV1013={
         ["resistor",{x:220,y:40,r:1000}],
         ["resistor",{x:440,y:40,r:1000}],
         ["resistor",{x:220,y:240,r:1000}],
-        ["resistor",{x:440,y:240,r:1000}]
+        ["resistor",{x:440,y:240,r:1000}],
+        ["resistor",{x:330,y:140,r:100,name:"Galvanometer (Bridge Detector)"}]
       ],
       connections:[
         [0,"+ (Pos)",1,"T1"],[0,"+ (Pos)",2,"T1"],
         [1,"T2",3,"T1"],[2,"T2",4,"T1"],
-        [3,"T2",0,"- (Gnd)"],[4,"T2",0,"- (Gnd)"]
+        [3,"T2",0,"- (Gnd)"],[4,"T2",0,"- (Gnd)"],
+        [5,"T1",1,"T2"],[5,"T2",2,"T2"]
       ],
-      note:"Bridge midpoint nodes are the R1/R3 and R2/R4 junctions."
+      note:"R5 is the bridge detector branch (modelled as a resistor, labelled Galvanometer) wired between the R1/R3 and R2/R4 midpoint nodes — this is what makes it a real bridge rather than two separate voltage dividers."
     },
     bridge_rectifier:{
       title:"Full-wave Bridge Rectifier",
@@ -26953,12 +27253,15 @@ window.NilSparkLabSafeWifiV1013={
         ["battery",{x:20,y:140,v:12}],
         ["resistor",{x:220,y:60,r:1000}],
         ["bjt_npn",{x:440,y:120}],
-        ["relay",{x:660,y:100}]
+        ["relay",{x:660,y:100}],
+        ["diode",{x:660,y:220,vf:0.7,name:"Flyback Diode"}]
       ],
       connections:[
         [0,"+ (Pos)",1,"T1"],[1,"T2",2,"B"],[2,"E",0,"- (Gnd)"],
-        [0,"+ (Pos)",3,"Coil+"],[3,"Coil-",2,"C"]
-      ]
+        [0,"+ (Pos)",3,"Coil+"],[3,"Coil-",2,"C"],
+        [4,"Cathode (-)",0,"+ (Pos)"],[4,"Anode (+)",3,"Coil-"]
+      ],
+      note:"D1 is the flyback diode across the coil, reverse-biased in normal operation (cathode to +supply). It gives the coil's collapsing field a path to freewheel through when Q1 switches off, protecting the transistor from the inductive voltage spike."
     },
     nand:{
       title:"NAND Gate",
