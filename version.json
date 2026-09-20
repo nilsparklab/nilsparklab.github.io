@@ -1,0 +1,5 @@
+{
+  "version": "11.5",
+  "url": "https://nilsparklab.github.io/",
+  "notes": "Update this file's \"version\" number on nilsparklab.github.io whenever you ship a new build. index.html checks this file and shows an update banner to anyone whose local copy is older."
+}
