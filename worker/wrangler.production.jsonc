@@ -1,0 +1,51 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nil-sparklab-api-prod",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-03",
+  "vars": {
+    "ALLOWED_ORIGIN": "https://nilsparklab.github.io"
+  },
+  "ratelimits": [
+    {
+      "name": "GENERAL_RATE_LIMITER",
+      "namespace_id": "2001",
+      "simple": { "limit": 60, "period": 60 }
+    },
+    {
+      "name": "AI_RATE_LIMITER",
+      "namespace_id": "2002",
+      "simple": { "limit": 10, "period": 60 }
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "AI_DAILY_QUOTA",
+      // Run `npx wrangler kv namespace create AI_DAILY_QUOTA --env production`
+      // (or use the dashboard) and paste the returned id here — placeholder.
+      "id": "REPLACE_WITH_PROD_KV_NAMESPACE_ID"
+    },
+    {
+      "binding": "PROGRESS_SYNC",
+      // Run `npx wrangler kv namespace create PROGRESS_SYNC --env production`
+      // and paste the returned id here — placeholder. Stores each device's
+      // opted-in progress snapshot, keyed by its sync code.
+      "id": "REPLACE_WITH_PROD_PROGRESS_SYNC_KV_NAMESPACE_ID"
+    },
+    {
+      "binding": "CLASSROOM_LIVE",
+      // Run `npx wrangler kv namespace create CLASSROOM_LIVE --env production`
+      // and paste the returned id here — placeholder. Stores each student's
+      // live status while a classroom room code is active (auto-expires
+      // after 6 hours, see worker/src/index.js).
+      "id": "REPLACE_WITH_PROD_CLASSROOM_LIVE_KV_NAMESPACE_ID"
+    },
+    {
+      "binding": "CIRCUIT_GALLERY",
+      // Run `npx wrangler kv namespace create CIRCUIT_GALLERY --env production`
+      // and paste the returned id here — placeholder. Stores published
+      // Community Circuits (no expiry — meant to persist).
+      "id": "REPLACE_WITH_PROD_CIRCUIT_GALLERY_KV_NAMESPACE_ID"
+    }
+  ]
+}

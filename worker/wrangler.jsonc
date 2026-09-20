@@ -1,0 +1,54 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nil-sparklab-api",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-03",
+  "vars": {
+    "ALLOWED_ORIGIN": "https://nilsparklab.github.io"
+  },
+  "ratelimits": [
+    {
+      "name": "GENERAL_RATE_LIMITER",
+      // Unique per Cloudflare account. Keep dev/staging separate from
+      // production (see wrangler.production.jsonc) so their counts don't mix.
+      "namespace_id": "1001",
+      "simple": { "limit": 60, "period": 60 }
+    },
+    {
+      "name": "AI_RATE_LIMITER",
+      "namespace_id": "1002",
+      "simple": { "limit": 10, "period": 60 }
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "AI_DAILY_QUOTA",
+      // Run `npx wrangler kv namespace create AI_DAILY_QUOTA` and paste the
+      // returned id here before deploying — this is a placeholder.
+      "id": "REPLACE_WITH_DEV_KV_NAMESPACE_ID"
+    },
+    {
+      "binding": "PROGRESS_SYNC",
+      // Run `npx wrangler kv namespace create PROGRESS_SYNC` and paste the
+      // returned id here before deploying — this is a placeholder. Stores
+      // each device's opted-in progress snapshot, keyed by its sync code.
+      "id": "REPLACE_WITH_DEV_PROGRESS_SYNC_KV_NAMESPACE_ID"
+    },
+    {
+      "binding": "CLASSROOM_LIVE",
+      // Run `npx wrangler kv namespace create CLASSROOM_LIVE` and paste the
+      // returned id here before deploying — this is a placeholder. Stores
+      // each student's live status while a classroom room code is active
+      // (auto-expires after 6 hours, see worker/src/index.js).
+      "id": "REPLACE_WITH_DEV_CLASSROOM_LIVE_KV_NAMESPACE_ID"
+    },
+    {
+      "binding": "CIRCUIT_GALLERY",
+      // Run `npx wrangler kv namespace create CIRCUIT_GALLERY` and paste the
+      // returned id here before deploying — this is a placeholder. Stores
+      // published Community Circuits (no expiry — this one's meant to
+      // persist, unlike PROGRESS_SYNC/CLASSROOM_LIVE).
+      "id": "REPLACE_WITH_DEV_CIRCUIT_GALLERY_KV_NAMESPACE_ID"
+    }
+  ]
+}
