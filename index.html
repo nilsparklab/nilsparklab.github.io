@@ -3,8 +3,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta content="11.0" name="application-version"/>
-<meta content="v11.0" name="application-release"/>
+<meta content="11.5" name="application-version"/>
+<meta content="v11.5" name="application-release"/>
 <script id="nsl-v64-security-audit">
 (() => {
   "use strict";
@@ -316,7 +316,7 @@
 })();
 </script>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; frame-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' https: data:; script-src 'self' 'unsafe-inline' https://unpkg.com; connect-src 'self' https://*.workers.dev; media-src 'self' https: blob:; worker-src 'self' blob:; upgrade-insecure-requests"/>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; frame-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https: data:; script-src 'self' 'unsafe-inline' https://unpkg.com; connect-src 'self' https://*.workers.dev; media-src 'self' https: blob:; worker-src 'self' blob:; upgrade-insecure-requests"/>
 <style id="nsl-dialog-core-style">
 .nsl-dialog-backdrop{position:fixed;inset:0;z-index:2147483646;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(2,6,23,.72);backdrop-filter:blur(13px) saturate(120%);-webkit-backdrop-filter:blur(13px) saturate(120%);animation:nslDialogFade .16s ease-out}
 .nsl-dialog-card{width:min(460px,calc(100vw - 28px));max-height:min(88vh,650px);overflow:auto;background:linear-gradient(180deg,rgba(15,23,42,.98),rgba(5,11,27,.99));color:#e2e8f0;border:1px solid rgba(34,211,238,.22);border-radius:20px;box-shadow:0 30px 90px rgba(0,0,0,.62),0 0 0 1px rgba(15,23,42,.8),0 0 34px rgba(34,211,238,.06);padding:0;font-family:inherit;animation:nslDialogIn .2s cubic-bezier(.22,1,.36,1)}
@@ -425,6 +425,7 @@
     "@context": "https://schema.org",
     "@type": "WebSite",
     "name": "NIL SparkLab",
+    "alternateName": ["NIL Spark Lab", "NilSparkLab", "nilsparklab.github.io"],
     "url": "https://nilsparklab.github.io/",
     "inLanguage": ["en", "hi"]
   }
@@ -484,6 +485,11 @@ background-size: 20px 20px;
 background-image: radial-gradient(circle, rgba(56, 189, 248, 0.2) 1.5px, transparent 1.5px);
 }
 .draggable-card {
+touch-action: none;
+user-select: none;
+-webkit-user-select: none;
+}
+#probe-red, #probe-black {
 touch-action: none;
 user-select: none;
 -webkit-user-select: none;
@@ -780,7 +786,7 @@ font-size:12px!important;
 }
 }
 </style>
-<meta content="11.0" name="nilsparklab-version"/>
+<meta content="11.5" name="nilsparklab-version"/>
 <style id="nsl-v575-layout-bugfix">
 #nsl-floating-status, .nsl-status-pill, [data-nsl-status-pill]{
 max-width:calc(100vw - 28px);
@@ -3188,7 +3194,7 @@ animation:nslHeroIn .5s cubic-bezier(.22,1,.36,1) both;
 @keyframes nslUpdateBannerIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
 </style>
 <meta content="summary_large_image" name="twitter:card"/><meta content="https://nilsparklab.github.io/assets/seo/og-image.png" name="twitter:image"/></head>
-<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col selection:bg-cyan-500 selection:text-black" data-nil-sparklab-version="11.0" data-nil-sparklab-release="v11.0">
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col selection:bg-cyan-500 selection:text-black" data-nil-sparklab-version="11.5" data-nil-sparklab-release="v11.5">
 <div id="nsl-preloader" aria-hidden="true" style="position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#020617;transition:opacity .35s ease;">
 <div style="width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,#22d3ee,#2563eb);display:flex;align-items:center;justify-content:center;box-shadow:0 0 40px rgba(34,211,238,.35);animation:nslPreloaderPulse 1.4s ease-in-out infinite;">
 <svg width="28" height="28" viewBox="0 0 24 24" fill="#020617"><path d="M13 2 3 14h7l-1 8 11-14h-7l1-6z"/></svg>
@@ -3464,31 +3470,6 @@ Take Lab Quiz
 <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
 <div class="mb-3 flex items-center gap-2 flex-nowrap" id="nsl-v546-sim-controls"></div>
 <button class="p-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-cyan-500 text-left" onclick="nslOpenProjectSystem()" type="button">📁 <strong>Project System</strong><div class="text-[10px] text-slate-500 mt-1">Save, load, import &amp; export circuits</div></button>
-<div class="sm:col-span-3" id="nsl-learning-lab-wrapper">
-<button aria-expanded="false" class="w-full p-4 rounded-xl bg-slate-900 border border-slate-800 hover:border-cyan-500 text-left transition" id="nsl-learning-lab-toggle" onclick="toggleNilSparkLabLearningTools()" type="button">
-<div class="flex items-center justify-between gap-3">
-<div>
-<div class="text-base font-bold text-slate-100">🎓 Learning Lab</div>
-<div class="text-[10px] text-slate-500 mt-1">Guided electrical experiments &amp; lab tools</div>
-</div>
-<span class="text-cyan-400 text-lg transition-transform" id="nsl-learning-lab-chevron">⌄</span>
-</div>
-</button>
-<div aria-hidden="true" class="hidden mt-2 grid grid-cols-1 gap-2" id="nsl-learning-tools">
-<button class="nsl-learning-tool" onclick="nslOpenLearningTool('multimeter')" type="button">📟 Multimeter</button>
-<button class="nsl-learning-tool" onclick="nslOpenLearningTool('oscilloscope')" type="button">📈 Oscilloscope</button>
-<button class="nsl-learning-tool" onclick="nslOpenLearningTool('experiments')" type="button">🎓 Experiments</button>
-<button class="nsl-learning-tool" onclick="nslOpenLearningTool('challenges')" type="button">🎯 Challenges</button>
-<button class="nsl-learning-tool" onclick="nslOpenLearningTool('wiring')" type="button">🔌 Wiring Check</button>
-<button class="nsl-learning-tool" onclick="nslOpenLearningTool('practical')" type="button">🎓 Practical Lab</button>
-<button class="nsl-learning-tool" onclick="nslOpenLearningTool('projects')" type="button">💾 Projects</button>
-<button class="nsl-learning-tool" onclick="nslOpenLearningTool('properties')" type="button">⚙ Properties</button>
-<button class="nsl-learning-tool" onclick="nslOpenLearningTool('solver')" type="button">⚡ Solver</button>
-<button class="nsl-learning-tool" onclick="nslOpenLearningTool('waveform')" type="button">📈 Waveform</button>
-<button class="nsl-learning-tool" onclick="nslOpenLearningTool('records')" type="button">🎓 Records</button>
-<button class="nsl-learning-tool" onclick="nslOpenLearningTool('audit')" type="button">✓ Final Audit</button>
-</div>
-</div>
 </div>
 <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-2xl">
 <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4 mb-4">
@@ -3738,16 +3719,48 @@ Interactive Circuit Builder Sandbox
 </div>
 </div>
 <div class="border-t border-slate-800 pt-3 space-y-2">
-<div class="flex justify-between items-center">
-<h4 class="text-xs font-bold text-amber-400 uppercase font-mono flex items-center gap-1.5">
-<i class="w-3.5 h-3.5" data-lucide="gauge"></i> Multimeter
+<div class="flex justify-between items-center gap-2">
+<h4 class="text-xs font-bold text-amber-400 uppercase font-mono flex items-center gap-1.5 shrink-0">
+<i class="w-3.5 h-3.5" data-lucide="gauge"></i> <span id="dmm-title-text">Multimeter</span>
 </h4>
+<div class="flex items-center gap-1.5 shrink-0">
 <span class="text-[9px] font-mono px-1.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded" id="dmm-mode-badge">DC V</span>
+<!-- v5.92: launcher for the other working Learning Lab tools, scoped to
+     the Circuit Builder itself instead of only being reachable from the
+     Home page. Only lists tools with a real window.NilSparkLabXxx module
+     behind them (Multimeter/Oscilloscope/Experiments/Challenges/Wiring
+     Check on Home are currently dead — their modules were never wired up
+     — so they're deliberately left out of this list rather than added
+     here as more non-functional entries). Selecting an option just opens
+     that tool's existing modal via the same nslOpenLearningTool() used on
+     Home, then resets back to "Multimeter" (the default, and the card this
+     picker lives in) — this is a launcher menu, not a persistent
+     selection. Choosing "Multimeter" itself is a no-op. -->
+<select class="text-[9px] font-mono bg-slate-950 border border-slate-700 text-slate-300 rounded px-1 py-0.5 outline-none hover:border-amber-400" id="builder-instrument-picker" onchange="nslOpenBuilderInstrumentTool(this.value)" title="Open another lab tool" aria-label="Open another lab tool">
+<option selected value="multimeter">🎛 Multimeter</option>
+<option value="solver">⚡ Solver</option>
+<option value="waveform">📈 Waveform</option>
+<option value="vicurve">📊 V-I Curve</option>
+<option value="practical">🎓 Practical Lab</option>
+<option value="properties">⚙ Properties</option>
+<option value="projects">💾 Projects</option>
+<option value="records">🎓 Records</option>
+<option value="audit">✓ Final Audit</option>
+</select>
 </div>
-<div class="bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-center font-mono">
+</div>
+<div class="bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-center font-mono" id="dmm-meter-view">
 <span class="text-base font-bold text-amber-400 tracking-wider" id="dmm-screen">0.00 V</span>
 </div>
-<div class="flex gap-1.5 text-xs font-mono">
+<!-- Inline Waveform view: replaces the meter display above when "Waveform" is
+     picked in the More Tools dropdown (see nslSetDmmView). Compact on purpose:
+     just the trace plus a one-line summary; the Volts/Amps/Beep buttons below
+     are hidden while it is shown (pick "Multimeter" in the dropdown to return). -->
+<div class="bg-slate-950 border border-slate-800 rounded-lg font-mono overflow-hidden" id="dmm-wave-view" style="display:none">
+<canvas id="dmm-wave-canvas" onclick="nslDmmGraphTap()" style="display:block;width:100%;height:56px"></canvas>
+<div id="dmm-wave-summary" style="font-size:10px;line-height:1.35;color:#94a3b8;text-align:center;padding:3px 6px;border-top:1px solid #1e293b">—</div>
+</div>
+<div class="flex gap-1.5 text-xs font-mono" id="dmm-mode-buttons">
 <button class="flex-1 py-1 bg-slate-950 border border-slate-700 rounded hover:border-amber-400 text-slate-300" onclick="setDmmMode('V')">Volts</button>
 <button class="flex-1 py-1 bg-slate-950 border border-slate-700 rounded hover:border-amber-400 text-slate-300" onclick="setDmmMode('mA')">Amps</button>
 <button class="flex-1 py-1 bg-slate-950 border border-slate-700 rounded hover:border-amber-400 text-slate-300" onclick="setDmmMode('CONT')">Beep</button>
@@ -3805,14 +3818,14 @@ Interactive Circuit Builder Sandbox
 </div>
 </div>
 </div>
-<div class="absolute z-40 cursor-grab active:cursor-grabbing flex flex-col items-center" id="probe-red" style="left: 30px; bottom: 30px;">
+<div class="absolute z-40 cursor-grab active:cursor-grabbing flex flex-col items-center" id="probe-red" style="left: 16px; bottom: 30px;">
 <div class="w-4 h-9 bg-rose-600 rounded-t-sm border border-rose-400 shadow-lg shadow-rose-500/40 flex items-center justify-center">
 <span class="text-[8px] font-bold text-white">+</span>
 </div>
 <div class="w-1 h-3 bg-slate-300"></div>
 <div class="probe-tip w-2 h-2 rounded-full bg-rose-400 ring-2 ring-rose-500/50"></div>
 </div>
-<div class="absolute z-40 cursor-grab active:cursor-grabbing flex flex-col items-center" id="probe-black" style="left: 70px; bottom: 30px;">
+<div class="absolute z-40 cursor-grab active:cursor-grabbing flex flex-col items-center" id="probe-black" style="left: 56px; bottom: 30px;">
 <div class="w-4 h-9 bg-slate-800 rounded-t-sm border border-slate-600 shadow-lg flex items-center justify-center">
 <span class="text-[8px] font-bold text-slate-400">−</span>
 </div>
@@ -7175,6 +7188,8 @@ Score: <span class="font-bold" id="quiz-score">0</span>
         if (status) status.innerText = 'Canvas cleared. Ready to build a new circuit.';
         if (stat) stat.innerText = '';
         updateSmartFromSimulation(0, 0, 0, 'READY', 'Canvas cleared. Add components and connect them to build a new circuit.');
+        if (typeof window.NSLResetProbes === 'function') window.NSLResetProbes();
+        if (typeof nslSetDmmView === 'function') nslSetDmmView('meter');
         updateDmmReading();
         return true;
       };
@@ -7466,36 +7481,399 @@ Score: <span class="font-bold" id="quiz-score">0</span>
     }
 
     function initDraggableProbes() {
-      ['probe-red', 'probe-black'].forEach(id => {
+      // Probes always start each Builder visit at their default rest spot
+      // (bottom-left, side by side). A dragged position is kept only for the
+      // current visit -- in memory, not localStorage -- and is discarded when:
+      //   * the Builder section is left (canvas becomes hidden/0x0), or
+      //   * the canvas is cleared (see clearBuilderCanvas), or
+      //   * NSLResetProbes() is called.
+      // Positions are stored as { left, bottom } from the canvas's bottom-left
+      // corner and applied via CSS left/bottom, the same way the default is,
+      // so the default and a dragged spot share ONE coordinate frame. They
+      // are only applied while the canvas has a real size: this function runs
+      // on DOMContentLoaded while the Builder section is still hidden, and
+      // measuring a 0x0 canvas used to squash probes into its top-left corner.
+      // Only real drags (>= 3px) count; a plain tap changes nothing.
+      // Old persisted keys are removed here since nothing reads them anymore.
+      try {
+        ['nsl_probe_pos_v2', 'nsl_probe_pos_v3', 'nsl_probe_pos_v4'].forEach(k => localStorage.removeItem(k));
+      } catch (e) { /* ignore */ }
+
+      const canvas = document.getElementById('builder-canvas');
+      if (!canvas) return;
+      const PROBE_IDS = ['probe-red', 'probe-black'];
+      // Must match the inline style in the markup.
+      const DEFAULT_LEFT = { 'probe-red': 16, 'probe-black': 56 };
+      const DEFAULT_BOTTOM = 30;
+      const dragged = {}; // id -> { left, bottom } for the current visit
+
+      function clampPos(el, left, bottom) {
+        const w = canvas.clientWidth, h = canvas.clientHeight;
+        return {
+          left: Math.max(0, Math.min(w - el.offsetWidth, left)),
+          bottom: Math.max(0, Math.min(h - el.offsetHeight, bottom))
+        };
+      }
+      function placeProbe(el, left, bottom) {
+        el.style.right = '';
+        el.style.top = '';
+        el.style.left = `${left}px`;
+        el.style.bottom = `${bottom}px`;
+      }
+
+      function resetProbes(refreshReading) {
+        PROBE_IDS.forEach(id => {
+          delete dragged[id];
+          const el = document.getElementById(id);
+          if (el) placeProbe(el, DEFAULT_LEFT[id], DEFAULT_BOTTOM);
+        });
+        if (refreshReading && typeof updateDmmReading === 'function') updateDmmReading();
+      }
+      window.NSLResetProbes = function () { resetProbes(true); };
+
+      // Keep dragged probes inside the canvas when it changes size.
+      function applyDraggedPositions() {
+        PROBE_IDS.forEach(id => {
+          const el = document.getElementById(id);
+          const s = dragged[id];
+          if (!el || !s || !el.offsetWidth) return;
+          const p = clampPos(el, s.left, s.bottom);
+          placeProbe(el, p.left, p.bottom);
+        });
+      }
+
+      // Canvas size 0 means the Builder section was hidden (user navigated
+      // to another page/option) -> back to the default spot.
+      function onCanvasResize() {
+        if (canvas.clientWidth === 0 || canvas.clientHeight === 0) {
+          resetProbes(false);
+          if (typeof nslSetDmmView === 'function' && nslDmmView !== 'meter') nslSetDmmView('meter');
+          return;
+        }
+        applyDraggedPositions();
+      }
+
+      PROBE_IDS.forEach(id => {
         const el = document.getElementById(id);
-        let isDragging = false;
-        let startX, startY;
+        if (!el) return;
+        let dragging = false, moved = false, pid = null;
+        let offX = 0, offY = 0, startX = 0, startY = 0;
 
         el.addEventListener('pointerdown', (e) => {
-          isDragging = true;
-          el.setPointerCapture(e.pointerId);
+          if (e.pointerType === 'mouse' && e.button !== 0) return;
+          dragging = true;
+          moved = false;
+          pid = e.pointerId;
+          try { el.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
           const rect = el.getBoundingClientRect();
-          const canvasRect = document.getElementById('builder-canvas').getBoundingClientRect();
-          startX = e.clientX - (rect.left - canvasRect.left);
-          startY = e.clientY - (rect.top - canvasRect.top);
+          offX = e.clientX - rect.left;
+          offY = e.clientY - rect.top;
+          startX = e.clientX;
+          startY = e.clientY;
         });
 
-        window.addEventListener('pointermove', (e) => {
-          if (!isDragging) return;
-          const canvas = document.getElementById('builder-canvas');
-          const canvasRect = canvas.getBoundingClientRect();
-          const x = Math.max(0, Math.min(canvasRect.width - 20, e.clientX - startX));
-          const y = Math.max(0, Math.min(canvasRect.height - 45, e.clientY - startY));
-          el.style.left = `${x}px`;
-          el.style.top = `${y}px`;
+        el.addEventListener('pointermove', (e) => {
+          if (!dragging || e.pointerId !== pid) return;
+          if (!moved && Math.hypot(e.clientX - startX, e.clientY - startY) < 3) return;
+          moved = true;
+          const cr = canvas.getBoundingClientRect();
+          const left = e.clientX - offX - cr.left - canvas.clientLeft;
+          const top = e.clientY - offY - cr.top - canvas.clientTop;
+          const p = clampPos(el, left, canvas.clientHeight - top - el.offsetHeight);
+          placeProbe(el, p.left, p.bottom);
+          dragged[id] = p;
           updateDmmReading();
         });
 
-        window.addEventListener('pointerup', () => { isDragging = false; });
+        const endDrag = () => {
+          dragging = false;
+          moved = false;
+        };
+        el.addEventListener('pointerup', endDrag);
+        el.addEventListener('pointercancel', endDrag);
       });
+
+      if (typeof ResizeObserver === 'function') {
+        new ResizeObserver(onCanvasResize).observe(canvas);
+      } else {
+        window.addEventListener('resize', onCanvasResize);
+        window.addEventListener('orientationchange', onCanvasResize);
+      }
+    }
+
+    // ---- Inline Waveform view for the Multimeter card ---------------------
+    // The card's "More Tools" picker can swap the meter display for a compact
+    // waveform of the circuit's source: Multimeter <-> Waveform. Reads the
+    // builder's real source types ('source' = DC battery, 'ac_source' = AC,
+    // whose `v` is RMS). Other tools (Solver etc.) still open as popups.
+    var nslDmmView = 'meter';
+    var nslDmmWaveTimer = null;
+
+    function nslDmmWaveParams() {
+      const list = Array.isArray(builderCanvasComps) ? builderCanvasComps : [];
+      const ac = list.find(c => c && (c.type === 'ac_source' || c.type === 'generator'));
+      const dc = list.find(c => c && (c.type === 'source' || c.type === 'battery' || c.type === 'dc_source'));
+      if (ac) {
+        const vrmsRaw = Number(ac.v);
+        const vrms = Number.isFinite(vrmsRaw) ? Math.max(0, vrmsRaw) : 230;
+        const fRaw = Number(ac.frequency);
+        const f = Number.isFinite(fRaw) && fRaw > 0 ? fRaw : 50;
+        const w = String(ac.waveform || ac.wave || 'sine').toLowerCase();
+        const wave = ['sine', 'square', 'triangle'].includes(w) ? w : 'sine';
+        const crest = wave === 'square' ? 1 : wave === 'triangle' ? Math.sqrt(3) : Math.SQRT2;
+        return { isAC: true, f, wave, vrms, peak: vrms * crest };
+      }
+      if (dc) {
+        const vRaw = Number(dc.v);
+        return { isAC: false, v: Number.isFinite(vRaw) ? vRaw : 0 };
+      }
+      return null;
+    }
+
+    function nslDrawDmmWave() {
+      const cv = document.getElementById('dmm-wave-canvas');
+      const sum = document.getElementById('dmm-wave-summary');
+      if (!cv) return;
+      const w = cv.clientWidth, h = cv.clientHeight;
+      if (!w || !h) return; // section hidden
+      const dpr = window.devicePixelRatio || 1;
+      const pw = Math.round(w * dpr), ph = Math.round(h * dpr);
+      if (cv.width !== pw || cv.height !== ph) { cv.width = pw; cv.height = ph; }
+      const ctx = cv.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(71,85,105,.32)';
+      for (let x = 0; x <= w + 0.5; x += w / 8) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+      for (let y = 0; y <= h + 0.5; y += h / 4) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+      const p = nslDmmWaveParams();
+      if (!p) {
+        ctx.fillStyle = '#64748b';
+        ctx.font = '11px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('No source', w / 2, h / 2);
+        if (sum) sum.textContent = 'Add a battery or AC source';
+        return;
+      }
+      const amp = h * 0.38;
+      ctx.strokeStyle = 'rgba(148,163,184,.4)';
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath(); ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.strokeStyle = '#22d3ee';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let i = 0; i <= w; i++) {
+        let y;
+        if (!p.isAC) {
+          y = p.v > 0 ? h / 2 - amp : p.v < 0 ? h / 2 + amp : h / 2;
+        } else {
+          const x = ((i / w) * 3) % 1; // 3 cycles across the view
+          const val = p.wave === 'square' ? (x < 0.5 ? 1 : -1)
+            : p.wave === 'triangle' ? (1 - 4 * Math.abs(x - 0.5))
+            : Math.sin(2 * Math.PI * x);
+          y = h / 2 - val * amp;
+        }
+        if (i === 0) ctx.moveTo(i, y); else ctx.lineTo(i, y);
+      }
+      ctx.stroke();
+      const f2 = n => String(Number(n.toFixed(2)));
+      if (sum) {
+        sum.textContent = p.isAC
+          ? `AC ${f2(p.f)} Hz \u00b7 Vpp ${f2(2 * p.peak)} V \u00b7 RMS ${f2(p.vrms)} V`
+          : `DC \u00b7 Vpp 0.00 V \u00b7 RMS ${Math.abs(p.v).toFixed(2)} V`;
+      }
+    }
+
+    // ---- V-I Curve view (shares the graph box with Waveform) ---------------
+    // Draws the voltage-current characteristic of one component from the
+    // circuit: ohmic parts (resistor, pot, LDR, lamp, motor, relay coil,
+    // PT100) as a straight line through the origin; LED / diode / zener with
+    // their knee (zener also breaks down in reverse). With several candidates
+    // the graph is tappable to cycle through them. If a simulation has run,
+    // the loop current from window.NILSparkLabLastSimulation is marked as the
+    // operating point (exact for a series loop, only indicative otherwise).
+    var nslVISelId = null;
+
+    function nslVICandidates() {
+      const list = Array.isArray(builderCanvasComps) ? builderCanvasComps : [];
+      const pos = (v, d) => (Number.isFinite(Number(v)) && Number(v) > 0 ? Number(v) : d);
+      const out = [];
+      list.forEach(c => {
+        if (!c) return;
+        const t = c.type;
+        if (t === 'led') {
+          out.push({ c, kind: 'led', vf: pos(c.vf, 2.0), label: c.name || 'LED' });
+        } else if (t === 'diode') {
+          const dk = String(c.deviceKind || '').toLowerCase();
+          if (dk === 'zener') out.push({ c, kind: 'zener', vf: pos(c.vf, 0.7), vz: pos(c.zenerV, 5.1), label: c.name || 'Zener Diode' });
+          else out.push({ c, kind: 'diode', vf: pos(c.vf, 0.7), label: c.name || 'Diode' });
+        } else if (['resistor', 'potentiometer', 'ldr', 'lamp', 'motor', 'pt100', 'relay'].includes(t)) {
+          const r = pos(t === 'relay' ? c.coilR : c.r, 0);
+          if (r > 0) out.push({ c, kind: 'ohm', r, label: c.name || t });
+        }
+      });
+      return out;
+    }
+
+    function nslVIPick(cands) {
+      return cands.find(x => x.c.id === nslVISelId) || cands[0];
+    }
+
+    function nslDmmGraphTap() {
+      if (nslDmmView !== 'iv') return;
+      const cands = nslVICandidates();
+      if (cands.length < 2) return;
+      const cur = nslVIPick(cands);
+      nslVISelId = cands[(cands.indexOf(cur) + 1) % cands.length].c.id;
+      nslDrawDmmIV();
+    }
+
+    // Fixed, centred ranges (x'ox / y'oy, four quadrants): X = +-voltage,
+    // Y = +-current. Resistor uses a FIXED current axis so R shows up as slope.
+    function nslVIModel(m) {
+      if (m.kind === 'ohm') {
+        const src = (Array.isArray(builderCanvasComps) ? builderCanvasComps : []).find(c => c && c.type === 'source');
+        const vmax = Math.max(5, Math.ceil(Number(src && src.v) || 10));
+        return { X: vmax, Y: 0.02, f: v => v / m.r };
+      }
+      const fwd = (nVt, vf) => { const is = 0.01 / Math.exp(vf / nVt); return v => is * (Math.exp(v / nVt) - 1); };
+      if (m.kind === 'led') return { X: m.vf + 0.8, Y: 0.03, f: fwd(2 * 0.02585, m.vf) };
+      if (m.kind === 'zener') {
+        const g = fwd(1.5 * 0.02585, m.vf);
+        return { X: m.vz + 0.8, Y: 0.03, f: v => g(v) + (v < -m.vz ? (v + m.vz) / 10 : 0) };
+      }
+      return { X: m.vf + 0.5, Y: 0.03, f: fwd(1.5 * 0.02585, m.vf) };
+    }
+
+    function nslDrawDmmIV() {
+      const cv = document.getElementById('dmm-wave-canvas');
+      const sum = document.getElementById('dmm-wave-summary');
+      if (!cv) return;
+      const w = cv.clientWidth, h = cv.clientHeight;
+      if (!w || !h) return;
+      const dpr = window.devicePixelRatio || 1;
+      const pw = Math.round(w * dpr), ph = Math.round(h * dpr);
+      if (cv.width !== pw || cv.height !== ph) { cv.width = pw; cv.height = ph; }
+      const ctx = cv.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      const cx = w / 2, cy = h / 2, pad = 8;
+      // grid (8 x 4 cells, centre lines coincide with the axes)
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(71,85,105,.32)';
+      for (let k = 0; k <= 8; k++) { ctx.beginPath(); ctx.moveTo(k * w / 8, 0); ctx.lineTo(k * w / 8, h); ctx.stroke(); }
+      for (let k = 0; k <= 4; k++) { ctx.beginPath(); ctx.moveTo(0, k * h / 4); ctx.lineTo(w, k * h / 4); ctx.stroke(); }
+      // axes x'ox and y'oy through the centre
+      ctx.strokeStyle = 'rgba(203,213,225,.75)';
+      ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke();
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '9px monospace';
+      ctx.textAlign = 'right'; ctx.textBaseline = 'bottom'; ctx.fillText('V', w - 3, cy - 2);
+      ctx.textAlign = 'left'; ctx.fillText("V'", 3, cy - 2);
+      ctx.textBaseline = 'top'; ctx.fillText('I', cx + 3, 2);
+      ctx.textBaseline = 'bottom'; ctx.fillText("I'", cx + 3, h - 2);
+      const cands = nslVICandidates();
+      if (!cands.length) {
+        if (sum) sum.textContent = 'No V-I data\nAdd a resistor, LED or diode';
+        return;
+      }
+      const m = nslVIPick(cands);
+      const md = nslVIModel(m);
+      const fmtI = a => Math.abs(a) >= 1 ? `${Number(a.toFixed(2))} A` : `${Number((a * 1000).toFixed(Math.abs(a * 1000) >= 100 ? 0 : 1))} mA`;
+      // range ticks at the ends of the axes
+      const xTick = `${Number(md.X.toFixed(1))} V`, yTick = fmtI(md.Y);
+      ctx.fillStyle = '#64748b';
+      ctx.textBaseline = 'top';
+      ctx.textAlign = 'right'; ctx.fillText(xTick, w - 3, cy + 3);
+      ctx.textAlign = 'left'; ctx.fillText(`-${xTick}`, 3, cy + 3);
+      ctx.fillText(yTick, cx + 4, 12);
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(`-${yTick}`, cx + 4, h - 12);
+      const px = v => cx + (v / md.X) * (w / 2 - pad);
+      const py = i => cy - (i / md.Y) * (h / 2 - pad);
+      // characteristic
+      ctx.strokeStyle = '#22d3ee';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      let started = false;
+      const steps = Math.max(1, Math.round(w - 2 * pad));
+      for (let k = 0; k <= steps; k++) {
+        const v = -md.X + (k / steps) * 2 * md.X;
+        const cur = md.f(v);
+        if (!Number.isFinite(cur)) continue;
+        const y = Math.max(-50, Math.min(h + 50, py(cur)));
+        if (!started) { ctx.moveTo(px(v), y); started = true; } else ctx.lineTo(px(v), y);
+      }
+      ctx.stroke();
+      // operating point from the last real simulation (loop current)
+      const sim = window.NILSparkLabLastSimulation;
+      const iop = sim && sim.source === 'builder-simulation' ? Number(sim.current) || 0 : 0;
+      let opLine = '';
+      if (iop > 0) {
+        const vop = m.kind === 'ohm' ? iop * m.r : m.vf;
+        opLine = `\u25cf ${vop.toFixed(2)} V @ ${fmtI(iop)}`;
+        // small tolerance so a point sitting exactly on the range edge still shows
+        if (Math.abs(vop) <= md.X * 1.02 && iop <= md.Y * 1.02) {
+          const vx = Math.max(-md.X, Math.min(md.X, vop)), iy = Math.max(-md.Y, Math.min(md.Y, iop));
+          ctx.fillStyle = '#fbbf24';
+          ctx.strokeStyle = '#020617';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.arc(px(vx), py(iy), 3.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        }
+      }
+      const fmtR = r => r >= 1e6 ? `${Number((r / 1e6).toFixed(2))} M\u03a9` : r >= 1000 ? `${Number((r / 1000).toFixed(2))} k\u03a9` : `${Number(r.toFixed(2))} \u03a9`;
+      const idx = cands.indexOf(m) + 1;
+      const tag = cands.length > 1 ? `\u2039${idx}/${cands.length}\u203a ` : '';
+      const desc = m.kind === 'ohm' ? `${fmtR(m.r)} \u00b7 I = V/R`
+        : m.kind === 'zener' ? `Vz ${Number(m.vz.toFixed(2))} V \u00b7 Vf ${Number(m.vf.toFixed(2))} V`
+        : `Vf ${Number(m.vf.toFixed(2))} V`;
+      const l2 = [`\u00b1${Number(md.X.toFixed(1))} V \u00b7 \u00b1${fmtI(md.Y)}`];
+      if (opLine) l2.push(opLine);
+      if (sum) sum.textContent = `${tag}${m.label} \u00b7 ${desc}\n${l2.join(' \u00b7 ')}`;
+    }
+
+    function nslDrawDmmGraph() {
+      if (nslDmmView === 'iv') nslDrawDmmIV();
+      else if (nslDmmView === 'wave') nslDrawDmmWave();
+    }
+
+    // view: 'wave' = inline Waveform, 'iv' = V-I Curve (Volts/Amps/Beep hidden
+    // for both); anything else = the meter.
+    function nslSetDmmView(view) {
+      const mode = (view === 'wave' || view === 'iv') ? view : 'meter';
+      const graph = mode !== 'meter';
+      nslDmmView = mode;
+      const $ = id => document.getElementById(id);
+      const mv = $('dmm-meter-view'), wv = $('dmm-wave-view');
+      const title = $('dmm-title-text'), badge = $('dmm-mode-badge'), picker = $('builder-instrument-picker');
+      const mb = $('dmm-mode-buttons'), cv = $('dmm-wave-canvas');
+      if (mv) mv.style.display = graph ? 'none' : '';
+      const iv = mode === 'iv', sm = $('dmm-wave-summary');
+      if (wv) wv.style.display = graph ? 'block' : 'none';
+      if (mb) mb.style.display = graph ? 'none' : '';
+      // Both graph views are full width with the text underneath; V-I is taller
+      // (four quadrants need the room), Waveform stays compact.
+      if (cv) {
+        cv.style.cursor = iv ? 'pointer' : '';
+        cv.style.width = '100%';
+        cv.style.height = iv ? '112px' : '56px';
+      }
+      if (sm) sm.style.whiteSpace = iv ? 'pre-line' : '';
+      if (title) title.textContent = mode === 'wave' ? 'Waveform' : mode === 'iv' ? 'V-I Curve' : 'Multimeter';
+      if (badge) badge.innerText = mode === 'wave' ? 'WAVE' : mode === 'iv' ? 'V-I' : (dmmMode === 'V' ? 'DC V' : dmmMode === 'mA' ? 'DC mA' : 'BEEP \ud83d\udd0a');
+      if (picker) picker.value = mode === 'wave' ? 'waveform' : mode === 'iv' ? 'vicurve' : 'multimeter';
+      if (nslDmmWaveTimer) { clearInterval(nslDmmWaveTimer); nslDmmWaveTimer = null; }
+      if (graph) {
+        nslDrawDmmGraph();
+        nslDmmWaveTimer = setInterval(nslDrawDmmGraph, 300); // follow circuit edits live
+      }
     }
 
     function setDmmMode(mode) {
+      if (nslDmmView !== 'meter') nslSetDmmView('meter'); // Volts/Amps/Beep => back to the meter
       safeSound('click');
       dmmMode = mode;
       document.getElementById('dmm-mode-badge').innerText = mode === 'V' ? 'DC V' : mode === 'mA' ? 'DC mA' : 'BEEP 🔊';
@@ -8010,6 +8388,131 @@ Score: <span class="font-bold" id="quiz-score">0</span>
       renderBuilderCanvas();
     }
 
+    // v11.1: real phasor-based AC steady-state solver for a series R-L-C
+    // loop. Until now an AC source with no rectifier fell straight through
+    // to the DC-battery solver, which doesn't even recognize 'ac_source' as
+    // a source type -- so a plain AC+RLC circuit silently failed with a
+    // generic "no power source" message despite being fully wired.
+    // Reuses acImpedance() (already used by the manual Engineering Tools
+    // RLC calculator, so this is the same tested formula, not a new one)
+    // and findACRectifierPath() (already correctly traces resistor/
+    // inductor/capacitor terminals as generic 2-terminal edges).
+    // Scope is deliberately conservative: pure series R/L/C only. A
+    // topology with any other component type, or with a component left
+    // outside the single L→N loop (a hint of branching/parallel wiring),
+    // is not handled here -- this returns false so the caller can show an
+    // honest "not supported yet" message instead of a wrong answer.
+    function runACSeriesRLCSim(acSource) {
+      const others = builderCanvasComps.filter(c => c.id !== acSource.id);
+      const RLC_TYPES = ['resistor', 'inductor', 'capacitor'];
+      if (others.length === 0 || !others.every(c => RLC_TYPES.includes(c.type))) return false;
+
+      const path = findACRectifierPath(acSource);
+      if (!path.closed || !others.every(c => path.componentIds.has(c.id))) {
+        isSimRunning = false;
+        safeSound('spark');
+        showSimulationStatus(
+          "<span class='text-rose-400 font-bold'>⚡ AC R-L-C loop is open.</span> Connect the resistor(s)/inductor(s)/capacitor(s) in one series loop from L to N.",
+          "AC series R-L-C path not closed"
+        );
+        updateSmartFromSimulation(Number(acSource.v) || 0, 0, 0, 'OPEN', 'AC source detected, but the series R-L-C loop is not closed.', 'ERROR');
+        renderBuilderCanvas();
+        return true;
+      }
+
+      const resistors = others.filter(c => c.type === 'resistor');
+      const inductors = others.filter(c => c.type === 'inductor');
+      const capacitors = others.filter(c => c.type === 'capacitor');
+
+      // Series combination rules: resistance and inductance add directly;
+      // capacitance combines by reciprocal sum (same shape as parallel R).
+      const Rtotal = resistors.reduce((s, c) => s + Math.max(0, Number(c.r) || 0), 0)
+                   + inductors.reduce((s, c) => s + Math.max(0, Number(c.r) || 0.5), 0);
+      const Ltotal = inductors.reduce((s, c) => s + Math.max(0, Number(c.l) || 0), 0);
+      let Ctotal = 0;
+      if (capacitors.length) {
+        const sumInvC = capacitors.reduce((s, c) => s + 1 / Math.max(0.001, Number(c.c) || 0), 0);
+        Ctotal = sumInvC > 0 ? 1 / sumInvC : 0;
+      }
+
+      const freq = Math.max(0.01, Number(acSource.frequency) || 50);
+      const vrms = Math.max(0, Number(acSource.v) || 0);
+      // acImpedance() lives in a separate script block's own IIFE (the
+      // Engineering Tools module) and is only reachable via this window
+      // export, not as a bare global -- guard in case that module hasn't
+      // run yet for any reason, rather than throwing.
+      const acAnalysis = window.NilSparkLabACAnalysisV67;
+      if (!acAnalysis || typeof acAnalysis.acImpedance !== 'function') return false;
+      const z = acAnalysis.acImpedance(Rtotal, Ltotal, Ctotal, freq);
+
+      if (z.Z <= 0.001) {
+        isSimRunning = false;
+        safeSound('spark');
+        showSimulationStatus(
+          "<span class='text-rose-500 font-bold animate-pulse'>💥 Near-zero impedance -- this is effectively a short circuit.</span>",
+          "Add resistance or check component values"
+        );
+        updateSmartFromSimulation(vrms, 0, 0, 'CHECK', 'Series R-L-C impedance is essentially zero.', 'ERROR');
+        renderBuilderCanvas();
+        return true;
+      }
+
+      const currentA = vrms / z.Z;
+      const phaseRad = z.phaseDeg * Math.PI / 180;
+      const powerFactor = Math.cos(phaseRad);
+      const realPowerW = vrms * currentA * powerFactor;
+      const reactivePowerVAR = vrms * currentA * Math.sin(phaseRad);
+      const apparentPowerVA = vrms * currentA;
+      const vR = currentA * Rtotal;
+      const vL = currentA * z.XL;
+      const vC = capacitors.length ? currentA * z.XC : 0;
+
+      // Resonance note -- purely informational, only when both an inductor
+      // and a capacitor are actually present (a bare R or R+L/R+C loop
+      // can't resonate).
+      let resonanceNote = '';
+      if (inductors.length && capacitors.length && Ltotal > 0 && Ctotal > 0) {
+        const f0 = 1 / (2 * Math.PI * Math.sqrt((Ltotal / 1000) * (Ctotal * 1e-6)));
+        const nearResonance = Math.abs(z.XL - z.XC) < 0.05 * Math.max(z.XL, z.XC, 1);
+        resonanceNote = nearResonance
+          ? ` Circuit is near resonance (f₀ ≈ ${f0.toFixed(1)} Hz) -- impedance is close to its minimum.`
+          : ` Resonant frequency f₀ ≈ ${f0.toFixed(1)} Hz (source is at ${freq.toFixed(1)} Hz).`;
+      }
+
+      isSimRunning = true;
+      SoundEngine.playBeep(1000, 0.1);
+
+      simulationTelemetry = new Map();
+      resistors.forEach(c => {
+        const r = Math.max(0, Number(c.r) || 0);
+        const v = currentA * r;
+        c.simVoltage = v; c.simCurrent = currentA; c.simPower = v * currentA;
+        simulationTelemetry.set(c.id, { voltage: v, current: currentA, power: v * currentA, resistance: r });
+      });
+      inductors.forEach(c => {
+        const r = Math.max(0, Number(c.r) || 0.5);
+        const vDrop = currentA * r; // resistive (in-phase) drop across the coil's own winding resistance
+        c.simVoltage = vDrop; c.simCurrent = currentA; c.simPower = vDrop * currentA;
+        simulationTelemetry.set(c.id, { voltage: vDrop, current: currentA, power: vDrop * currentA, resistance: r });
+      });
+      capacitors.forEach(c => {
+        c.simVoltage = vC / Math.max(1, capacitors.length);
+        c.simCurrent = currentA;
+        c.simPower = 0; // ideal capacitor dissipates no real power
+        simulationTelemetry.set(c.id, { voltage: c.simVoltage, current: currentA, power: 0, resistance: 0 });
+      });
+
+      const phaseWord = z.phaseDeg > 0.5 ? 'current lags voltage (inductive)' : z.phaseDeg < -0.5 ? 'current leads voltage (capacitive)' : 'in phase (resistive)';
+      showSimulationStatus(
+        `<span class='text-emerald-400 font-bold'>✓ AC Series R-L-C solved.</span> Z = ${z.Z.toFixed(2)} Ω, φ = ${z.phaseDeg.toFixed(1)}° -- ${phaseWord}.${resonanceNote}`,
+        `Vrms = ${vrms.toFixed(2)} V | I = ${currentA.toFixed(3)} A | PF = ${powerFactor.toFixed(3)} | P = ${realPowerW.toFixed(2)} W | Q = ${reactivePowerVAR.toFixed(2)} VAR | S = ${apparentPowerVA.toFixed(2)} VA | VR=${vR.toFixed(2)}V VL=${vL.toFixed(2)}V${capacitors.length ? ' VC=' + vC.toFixed(2) + 'V' : ''}`
+      );
+      updateSmartFromSimulation(vrms, currentA, realPowerW, 'OK',
+        `Series AC R-L-C: Z=${z.Z.toFixed(2)}Ω (R=${Rtotal.toFixed(2)}, XL=${z.XL.toFixed(2)}, XC=${Number.isFinite(z.XC) ? z.XC.toFixed(2) : '0'}), φ=${z.phaseDeg.toFixed(1)}°, PF=${powerFactor.toFixed(3)}.`);
+      renderBuilderCanvas();
+      return true;
+    }
+
     function getActivePassiveComponents(battery) {
       if (!battery) return [];
       const path=findClosedComponentPath(battery);
@@ -8066,23 +8569,49 @@ Score: <span class="font-bold" id="quiz-score">0</span>
     // and diode/LED conduction in the Anode -> Cathode direction.
     function checkCircuitClosedLoop() {
       const battery=builderCanvasComps.find(c=>c.type==='source');
-      if(!battery)return {isClosed:false,battery:null};
-      const adj=new Map(), add=(u,v)=>{if(!adj.has(u))adj.set(u,[]);if(!adj.has(v))adj.set(v,[]);adj.get(u).push(v);adj.get(v).push(u);};
+      if(!battery)return {isClosed:false,battery:null,blockedByCapacitor:false};
       const key=(id,t)=>`${id}:${t}`;
-      builderWires.forEach(w=>{if(w?.from&&w?.to)add(key(w.from.compId,w.from.term),key(w.to.compId,w.to.term));});
-      const passive2=new Set(['resistor','ldr','thermistor','thermistor_ptc','pt100','motor','inductor','relay','buzzer','fuse','lamp','capacitor']);
-      builderCanvasComps.forEach(c=>{
-        if(c.type==='switch'||c.type==='push_button'||c.type==='reed_switch'||c.type==='mcb'){if(c.type==='mcb' ? (!c.tripped && c.closed !== false) : c.closed)add(key(c.id,c.terminals[0]),key(c.id,c.terminals[1]));return;}
-        if(c.type==='dpdt_switch'){if(c.position){add(key(c.id,'COM1'),key(c.id,'NC1'));add(key(c.id,'COM2'),key(c.id,'NC2'));}else{add(key(c.id,'COM1'),key(c.id,'NO1'));add(key(c.id,'COM2'),key(c.id,'NO2'));}return;}
-        if(c.type==='fuse'&&(c.blown||c.isBlown))return;
-        if(c.type==='potentiometer'){add(key(c.id,'Pin 1'),key(c.id,'Wiper'));add(key(c.id,'Wiper'),key(c.id,'Pin 3'));return;}
-        if(c.type==='led'||c.type==='diode'){add(key(c.id,'Anode (+)'),key(c.id,'Cathode (-)'));return;}
-        if(c.type==='bridge_rectifier'){add(key(c.id,'AC1'),key(c.id,'DC+'));add(key(c.id,'AC2'),key(c.id,'DC+'));add(key(c.id,'DC-'),key(c.id,'AC1'));add(key(c.id,'DC-'),key(c.id,'AC2'));return;}
-        if(passive2.has(c.type)){const ts=c.terminals||[];if(ts.length>=2)add(key(c.id,ts[0]),key(c.id,ts[1]));}
-      });
-      const start=key(battery.id,'+ (Pos)'),end=key(battery.id,'- (Gnd)'),seen=new Set([start]),q=[start];
-      while(q.length){const n=q.shift();if(n===end)return {isClosed:true,battery};for(const x of(adj.get(n)||[]))if(!seen.has(x)){seen.add(x);q.push(x);}}
-      return {isClosed:false,battery};
+
+      function buildGraph(includeCapacitor){
+        const adj=new Map(), add=(u,v)=>{if(!adj.has(u))adj.set(u,[]);if(!adj.has(v))adj.set(v,[]);adj.get(u).push(v);adj.get(v).push(u);};
+        builderWires.forEach(w=>{if(w?.from&&w?.to)add(key(w.from.compId,w.from.term),key(w.to.compId,w.to.term));});
+        // FIX: capacitor removed from this conducting set by default -- it is
+        // an open circuit at DC steady state (matches the real solver's own
+        // "v5.55 FINAL DC model" comment further down). Previously a loop that
+        // only closed through a capacitor was reported as a valid closed loop
+        // here, even though no steady-state current can actually flow through it.
+        const passive2=new Set(['resistor','ldr','thermistor','thermistor_ptc','pt100','motor','inductor','relay','buzzer','fuse','lamp']);
+        if(includeCapacitor) passive2.add('capacitor');
+        builderCanvasComps.forEach(c=>{
+          if(c.type==='switch'||c.type==='push_button'||c.type==='reed_switch'||c.type==='mcb'){if(c.type==='mcb' ? (!c.tripped && c.closed !== false) : c.closed)add(key(c.id,c.terminals[0]),key(c.id,c.terminals[1]));return;}
+          if(c.type==='dpdt_switch'){if(c.position){add(key(c.id,'COM1'),key(c.id,'NC1'));add(key(c.id,'COM2'),key(c.id,'NC2'));}else{add(key(c.id,'COM1'),key(c.id,'NO1'));add(key(c.id,'COM2'),key(c.id,'NO2'));}return;}
+          if(c.type==='fuse'&&(c.blown||c.isBlown))return;
+          if(c.type==='potentiometer'){add(key(c.id,'Pin 1'),key(c.id,'Wiper'));add(key(c.id,'Wiper'),key(c.id,'Pin 3'));return;}
+          if(c.type==='led'||c.type==='diode'){add(key(c.id,'Anode (+)'),key(c.id,'Cathode (-)'));return;}
+          if(c.type==='bridge_rectifier'){add(key(c.id,'AC1'),key(c.id,'DC+'));add(key(c.id,'AC2'),key(c.id,'DC+'));add(key(c.id,'DC-'),key(c.id,'AC1'));add(key(c.id,'DC-'),key(c.id,'AC2'));return;}
+          if(passive2.has(c.type)){const ts=c.terminals||[];if(ts.length>=2)add(key(c.id,ts[0]),key(c.id,ts[1]));}
+        });
+        return adj;
+      }
+
+      function isPathClosed(adj){
+        const start=key(battery.id,'+ (Pos)'),end=key(battery.id,'- (Gnd)'),seen=new Set([start]),q=[start];
+        while(q.length){const n=q.shift();if(n===end)return true;for(const x of(adj.get(n)||[]))if(!seen.has(x)){seen.add(x);q.push(x);}}
+        return false;
+      }
+
+      const isClosed = isPathClosed(buildGraph(false));
+      // FIX: when the real (capacitor-excluded) check says "open" but the
+      // wiring is topologically complete once a capacitor is allowed to
+      // conduct, the loop isn't actually broken -- it's DC-blocked by a
+      // capacitor, exactly as a correctly-wired RC filter should behave.
+      // Without this distinction, a correctly-built "RC Low-pass/High-pass
+      // Filter" diagram (battery -> R -> C -> battery, in series) always
+      // fell into the generic "Open Circuit: Path broken or switch OFF"
+      // message below, wrongly telling a student who wired it exactly
+      // right that something was disconnected.
+      const blockedByCapacitor = !isClosed && isPathClosed(buildGraph(true));
+      return {isClosed, battery, blockedByCapacitor};
     }
 
     // V6 FEATURE: NPN common-emitter DC bias-point solver. Detects the classic
@@ -8452,7 +8981,11 @@ Score: <span class="font-bold" id="quiz-score">0</span>
         const hasBridge=comps.some(bridge)||comps.filter(c=>c.type==='diode').length>=4;
         if(!hasBridge)issues.push('AC source detected, but no bridge rectifier/4-diode bridge is present.');
       }
-      const badAdvanced=comps.filter(c=>['bjt_npn','p_mosfet','scr','triac','diac','ic_741','reg_7805','schmitt_trigger','ir_sensor','thermocouple'].includes(c.type));
+      // FIX: bjt_pnp, mosfet_n and hall_sensor were missing here even though
+      // they exist as real palette components — verify was silently treating
+      // them as plain 2-terminal wires instead of flagging them like their
+      // NPN/P-MOSFET/other advanced siblings already just above.
+      const badAdvanced=comps.filter(c=>['bjt_npn','bjt_pnp','p_mosfet','mosfet_n','scr','triac','diac','ic_741','reg_7805','schmitt_trigger','ir_sensor','thermocouple','hall_sensor'].includes(c.type));
       if(badAdvanced.length)issues.push(`${badAdvanced.length} advanced component${badAdvanced.length===1?'':'s'} require their dedicated model; they will not be treated as simple 2-terminal wires.`);
       let health='READY',note='No obvious wiring faults detected.';
       if(issues.length){health='CHECK';note=issues.slice(0,3).join(' • ')+(issues.length>3?` • +${issues.length-3} more`:'');}
@@ -8610,6 +9143,16 @@ Score: <span class="font-bold" id="quiz-score">0</span>
         runHalfWaveRectifierSim(acSource);
         return;
       }
+      // v11.1: an AC source with no rectifier at all used to fall straight
+      // through to the DC-battery solver below, which doesn't recognize
+      // 'ac_source' as a source type -- so a plain series R/L/C AC circuit
+      // always failed with a generic "no power source" message even when
+      // correctly wired. Try the real phasor solver first; it returns
+      // false (and falls through as before) for any topology outside its
+      // conservative series-R/L/C-only scope.
+      if (acSource && !hasBridgeNetwork && !hasHalfWaveNetwork) {
+        if (runACSeriesRLCSim(acSource)) return;
+      }
 
       const smart=runSmartDiagnostics();
       const logicGates = builderCanvasComps.filter(c => c.type === 'logic_gate');
@@ -8690,7 +9233,14 @@ Score: <span class="font-bold" id="quiz-score">0</span>
               ? `<span class="text-amber-300 font-bold">⚠ ${kind} op-amp output saturated.</span> Ideal gain × Vin = ${opResult.voutIdeal.toFixed(2)} V is outside the single-supply rails (${opResult.railLo.toFixed(1)}–${opResult.railHi.toFixed(1)} V), so output clamps at the rail.`
               : `<span class="text-emerald-400 font-bold">✓ ${kind} op-amp solved.</span> Gain = ${gainTxt}.`;
             showSimulationStatus(msg, `Vin = ${opResult.vin.toFixed(2)} V | Gain = ${gainTxt} | Vout = ${opResult.vout.toFixed(2)} V`);
-            updateSmartFromSimulation(opResult.vout, 0, 0, opResult.saturated ? 'CHECK' : 'OK', `${kind} op-amp: Vin=${opResult.vin.toFixed(2)}V, gain=${gainTxt}, Vout(ideal)=${opResult.voutIdeal.toFixed(2)}V, Vout(clamped)=${opResult.vout.toFixed(2)}V.`, opResult.saturated ? 'WARNING' : 'OK');
+            // FIX: the "SUPPLY" diagnostics field was being fed opResult.vout
+            // (the op-amp's OUTPUT), not the actual supply voltage -- so an
+            // inverting op-amp clamped to 0V showed "SUPPLY: 0.00 V" even
+            // though the battery was really 5V. opResult.railHi is the real
+            // supply rail (== battery.v), matching how every other solver in
+            // this file reports supply (e.g. the transistor-switch solvers
+            // pass Vcc here, not some downstream node voltage).
+            updateSmartFromSimulation(opResult.railHi, 0, 0, opResult.saturated ? 'CHECK' : 'OK', `${kind} op-amp: Vin=${opResult.vin.toFixed(2)}V, gain=${gainTxt}, Vout(ideal)=${opResult.voutIdeal.toFixed(2)}V, Vout(clamped)=${opResult.vout.toFixed(2)}V.`, opResult.saturated ? 'WARNING' : 'OK');
             renderBuilderCanvas();
             return;
           }
@@ -8762,6 +9312,19 @@ Score: <span class="font-bold" id="quiz-score">0</span>
 
       if (!loop.isClosed) {
         isSimRunning = false;
+        if (loop.blockedByCapacitor) {
+          // Wiring is complete; this is correct DC-steady-state physics
+          // (a fully charged capacitor blocks further current), not a
+          // fault -- so this gets its own honest message instead of the
+          // generic "Path broken or switch OFF" below, which would wrongly
+          // tell a correctly-wired student something is disconnected.
+          SoundEngine.playBeep(700, 0.12);
+          document.getElementById('builder-status-text').innerHTML = "<span class='text-cyan-400 font-bold'>🔋 Capacitor fully charged:</span> at DC steady state it blocks further current. Current = 0 mA is the correct result here.";
+          document.getElementById('builder-calc-stat').innerText = "I = 0.00 mA (steady state)";
+          updateSmartFromSimulation(loop.battery?.v||0,0,0,'OK','Circuit is wired correctly. A capacitor is an open circuit at DC steady state once fully charged, so 0 mA is expected -- this is not a wiring fault.');
+          renderBuilderCanvas();
+          return;
+        }
         SoundEngine.playBeep(400, 0.2);
         document.getElementById('builder-status-text').innerHTML = "<span class='text-slate-400 font-bold'>⚡ Open Circuit:</span> Path broken or switch OFF. Current = 0 mA.";
         document.getElementById('builder-calc-stat').innerText = "I = 0.00 mA";
@@ -14108,6 +14671,26 @@ window.nslOpenLearningTool=function(t){
   }
  }catch(e){console.warn("Learning Lab tool error:",t,e)}
 };
+// v5.92: builder-embedded launcher for the Multimeter card's "More Tools"
+// dropdown. Reuses nslOpenLearningTool() so behaviour (including its
+// guarded null-checks and the "add a component first" toast for
+// Properties) stays identical to the Home page version — only the list of
+// offered tools differs (here, deliberately just the 7 with a real module
+// behind them). Waveform is now shown inline in the card; the rest reset the
+// <select> back to the current view afterward (one-shot launcher).
+window.nslOpenBuilderInstrumentTool=function(value){
+ var picker=document.getElementById("builder-instrument-picker");
+ // "Multimeter" and "Waveform" swap the Multimeter card's display in place
+ // (nslSetDmmView) — Waveform and V-I Curve show a graph there; every other
+ // tool is a one-shot popup launcher.
+ var cur=(window.nslDmmView==="wave")?"waveform":(window.nslDmmView==="iv")?"vicurve":"multimeter";
+ if(value==="multimeter"){if(window.nslSetDmmView)window.nslSetDmmView("meter");return;}
+ if(value==="waveform"){if(window.nslSetDmmView)window.nslSetDmmView("wave");return;}
+ if(value==="vicurve"){if(window.nslSetDmmView)window.nslSetDmmView("iv");return;}
+ if(!value){if(picker)picker.value=cur;return;}
+ if(window.nslOpenLearningTool) window.nslOpenLearningTool(value);
+ if(picker) picker.value=cur;
+};
 var old=["nsl-v557-dmm-launch","nsl-v558-scope-launch","nsl-v559-lab-launch","nsl-v560-launch","nsl-v566-wire-launch","nsl-v568-launch","nsl-v570-launch","nsl-v571-launch","nsl-v572-launch","nsl-v573-launch","nsl-v574-launch","nsl-v575-launch"];
 function hide(){old.forEach(function(id){var e=document.getElementById(id);if(e)e.style.display="none"})}
 document.addEventListener("DOMContentLoaded",function(){hide();setTimeout(hide,100);setTimeout(hide,500);setTimeout(hide,1200)});
@@ -14594,6 +15177,28 @@ background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.3);color:#67e8f
 </div>
 </div>
 <button aria-label="Smart Assistant Pro" id="nsl-smart-assistant-btn" title="Smart Assistant Pro">✦</button>
+<span hidden="" id="nsl-streak-badge" style="position:fixed;z-index:9998;right:8px;bottom:64px;background:#0f172a;border:1px solid #f59e0b;color:#fbbf24;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;"></span>
+<div hidden="" id="nsl-streak-remind-prompt" style="position:fixed;z-index:9998;right:8px;bottom:96px;max-width:220px;background:#0f172a;border:1px solid #334155;border-radius:10px;padding:10px;font-size:12px;color:#e2e8f0;">
+  <div style="margin-bottom:6px;">Daily practice reminder chahiye? 🔔</div>
+  <button id="nsl-streak-remind-enable" style="background:#0891b2;color:#fff;border:none;border-radius:6px;padding:4px 8px;font-size:12px;margin-right:6px;">Haan</button>
+  <button id="nsl-streak-remind-dismiss" style="background:transparent;color:#94a3b8;border:none;font-size:12px;">Nahi</button>
+</div>
+<div hidden="" id="nsl-sync-panel" style="position:fixed;z-index:9998;right:8px;bottom:222px;width:240px;background:#0f172a;border:1px solid #334155;border-radius:10px;padding:12px;font-size:12px;color:#e2e8f0;">
+  <div style="font-weight:600;margin-bottom:6px;">Progress Sync</div>
+  <div style="margin-bottom:6px;color:#94a3b8;">Apna code doosre device pe daal ke progress le jao.</div>
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+    <code id="nsl-sync-code-display" style="background:#1e293b;padding:2px 6px;border-radius:4px;letter-spacing:1px;flex:1;"></code>
+    <button id="nsl-sync-copy-btn" style="background:#334155;color:#fff;border:none;border-radius:6px;padding:3px 7px;font-size:11px;">Copy</button>
+  </div>
+  <button id="nsl-sync-push-btn" style="width:100%;background:#0891b2;color:#fff;border:none;border-radius:6px;padding:6px;font-size:12px;margin-bottom:8px;">Is device se Sync Now</button>
+  <div style="border-top:1px solid #334155;padding-top:8px;margin-bottom:6px;color:#94a3b8;">Dusre device ka code daalo:</div>
+  <div style="display:flex;gap:6px;margin-bottom:6px;">
+    <input id="nsl-sync-pull-input" placeholder="CODE" style="flex:1;min-width:0;background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:4px;padding:4px 6px;font-size:12px;"/>
+    <button id="nsl-sync-pull-btn" style="background:#334155;color:#fff;border:none;border-radius:6px;padding:4px 8px;font-size:12px;">Load</button>
+  </div>
+  <div id="nsl-sync-status" style="min-height:14px;color:#94a3b8;"></div>
+  <div id="nsl-sync-last" style="color:#64748b;font-size:11px;margin-top:4px;"></div>
+</div>
 <div aria-hidden="true" id="nsl-smart-panel">
 <button aria-label="Close" class="sa-close" id="nsl-smart-close">×</button>
 <div class="sa-title"><div class="assistant-avatar-badge"><svg class="bot-avatar-img" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Volt"><defs><linearGradient id="botBodyGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ffffff"/><stop offset="50%" stop-color="#d6e0ec"/><stop offset="100%" stop-color="#8fa3bb"/></linearGradient><linearGradient id="botScreenGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#0a121e"/><stop offset="100%" stop-color="#03060a"/></linearGradient></defs><rect x="6" y="38" width="8" height="24" rx="4" fill="#8fa3bb"/><rect x="86" y="38" width="8" height="24" rx="4" fill="#8fa3bb"/><circle cx="10" cy="50" r="4.5" fill="#00e5ff" opacity="0.35"/><circle cx="10" cy="50" r="2.5" fill="#00e5ff"/><circle cx="90" cy="50" r="4.5" fill="#00e5ff" opacity="0.35"/><circle cx="90" cy="50" r="2.5" fill="#00e5ff"/><rect x="12" y="16" width="76" height="68" rx="28" fill="url(#botBodyGrad)" stroke="#c2d3e5" stroke-width="2"/><path d="M 40 17 L 60 17 L 56 22 L 44 22 Z" fill="#7a90a8" opacity="0.6"/><rect x="20" y="24" width="60" height="52" rx="20" fill="url(#botScreenGrad)" stroke="#1a2e47" stroke-width="2"/><path d="M 32 46 Q 39 37 46 46" fill="none" stroke="#00e5ff" stroke-width="9" stroke-linecap="round" opacity="0.25"/><path d="M 32 46 Q 39 37 46 46" fill="none" stroke="#00e5ff" stroke-width="4.5" stroke-linecap="round"/><path d="M 54 46 Q 61 37 68 46" fill="none" stroke="#00e5ff" stroke-width="9" stroke-linecap="round" opacity="0.25"/><path d="M 54 46 Q 61 37 68 46" fill="none" stroke="#00e5ff" stroke-width="4.5" stroke-linecap="round"/><path d="M 44 58 Q 50 64 56 58" fill="none" stroke="#00e5ff" stroke-width="7" stroke-linecap="round" opacity="0.25"/><path d="M 44 58 Q 50 64 56 58" fill="none" stroke="#00e5ff" stroke-width="3.5" stroke-linecap="round"/><path d="M 26 30 Q 50 24 74 30" fill="none" stroke="#ffffff" stroke-width="1.8" opacity="0.15" stroke-linecap="round"/></svg><span class="online-indicator"></span></div><span class="header-title">Smart Assistant</span><span class="pro-tag">PRO</span></div>
@@ -14918,7 +15523,7 @@ background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.3);color:#67e8f
     {keys:["hello","hi","namaste","help","madad","hello bhai","hey","kaise ho","assistant"], a:"Namaste! NIL SparkLab mein aapka swagat hai. Yahan aap Electric World explore kar sakte hain — koi bhi sawal pooch sakte hain, jaise \"LED nahi jal raha\" ya \"Ohm ka niyam\". Neeche diye gaye suggestions bhi try kar sakte hain."},
     {keys:["motor","dc motor","motor nahi"], a:"DC motor load hai. Battery + switch + motor se basic drive banao. Preset: Motor + Switch. Guided 🎓 se bhi steps milenge."},
     {keys:["capacitor","rc","charging","capacitor kya"], a:"Capacitor energy store karta hai. RC charging mein time constant τ = R×C. Practical Lab mein experiment try karo."},
-    {keys:["multimeter","measure","voltage measure","current measure","meter"], a:"Learning Lab → Multimeter. Probes canvas pe drag karke V / mA / continuity mode select karo."},
+    {keys:["multimeter","measure","voltage measure","current measure","meter"], a:"Circuit Builder me Multimeter card use karo. Probes canvas pe drag karke V / mA / continuity mode select karo."},
     {keys:["kya karu","ab kya","next","shuru","start kaise","kaise shuru","begin"], a:"Best start: Circuit Builder → LED Series preset, phir Simulate. Ya 🎓 Guided Experiment se Ohm's Law / LED steps follow karo. Empty canvas pe quick buttons bhi hain."},
     {keys:["thanks","thank","dhanyavad","shukriya","ok thanks"], a:"Badiya! Aur doubt ho to poochte raho — wire, LED, simulate, industrial, sab cover hai."},
     {keys:["error","bug","kaam nahi","not working","problem hai","issue hai"], a:"Pehle Health Score (Simulate ke baad) dekho. Common fixes: source add karo, wires complete karo, LED ke saath resistor lagao. Page hard refresh bhi try kar sakte ho."},
@@ -15816,8 +16421,27 @@ padding:8px 12px;font-size:11px;color:#67e8f9;text-align:center
 <div id="nsl-share-bar">
 <button id="nsl-share-copy" type="button">🔗 Copy Share Link</button>
 <button id="nsl-share-native" type="button">📤 Share</button>
+<button id="nsl-gallery-open" type="button">🌐 Community Circuits</button>
 </div>
 </div>
+<div id="nsl-gallery-panel"><div class="nsl-modal-card">
+<h3>🌐 Community Circuits</h3>
+<p style="font-size:11px;color:#94a3b8;">Apna circuit publish karo, ya doosron ke banaye circuits browse karke apne Builder mein load karo.</p>
+<div style="border-bottom:1px solid #334155;padding-bottom:10px;margin-bottom:10px;">
+<label style="font-size:11px;color:#67e8f9">Circuit ka title</label>
+<input id="nsl-gallery-title" maxlength="60" placeholder="e.g. LED Series Circuit" type="text">
+<label style="font-size:11px;color:#67e8f9">Aapka naam (optional)</label>
+<input id="nsl-gallery-author" maxlength="40" placeholder="Anonymous" type="text">
+<button class="primary" id="nsl-gallery-publish" type="button">📤 Publish current circuit</button>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+<span style="font-size:11px;color:#94a3b8;">Recent circuits</span>
+<button id="nsl-gallery-refresh" style="font-size:11px;padding:2px 8px;" type="button">🔄 Refresh</button>
+</div>
+<div id="nsl-gallery-list" style="max-height:260px;overflow-y:auto;"></div>
+<p id="nsl-gallery-status" style="margin-top:8px;color:#94a3b8;font-size:11px;"></p>
+<button id="nsl-gallery-close" type="button">Close</button>
+</div></div>
 <script>
 (function(){
   "use strict";
@@ -16478,7 +17102,7 @@ background:#020617;border:1px solid rgba(148,163,184,.25);color:#e2e8f0
 </style>
 <script id="nil-v51-diagnosis-script">
 (function(){'use strict';
- function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+ function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
  function type(c){return String(c&&(c.type||c.kind||c.componentType)||'').toLowerCase().replace(/[\s-]+/g,'_');}
  function num(c,keys){for(var i=0;i<keys.length;i++){var n=Number(c&&c[keys[i]]);if(Number.isFinite(n))return n;}return null;}
  function getState(){try{return window.NILSparkLabCircuitStateBridge&&window.NILSparkLabCircuitStateBridge.getState?window.NILSparkLabCircuitStateBridge.getState():{components:[],wires:[],types:[],counts:{}};}catch(_){return {components:[],wires:[],types:[],counts:{}}}}
@@ -16723,7 +17347,7 @@ window.NilSparkLabCircuitCompiler={
  * - SVG export helper
  */
 
-function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
 function norm(s){ return String(s||"").toLowerCase().replace(/[^a-z0-9\u0900-\u097f\s+./-]/gi," ").replace(/\s+/g," ").trim(); }
 
 function svgRoot(w,h,title,body,foot){
@@ -17404,7 +18028,7 @@ console.info("NilSparkLab Diagrams 5.1 confirm+PNG ready");
 var D = window.NilSparkLabDiagrams;
 if(!D){ console.warn("Diagrams core missing"); return; }
 
-function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
 function svgRoot(w,h,title,body,foot){
   w=Math.max(320,w||380); h=Math.max(180,h||240);
   return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+w+' '+h+'" width="'+w+'" height="'+h+'">'
@@ -17716,7 +18340,7 @@ console.info("NilSparkLab Diagrams 5.2 library+terminals · verified≈"+D.count
 /**
  * P1–P5: Netlist-first · API netlist · Verified pack · Validation · Vision hook
  */
-function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
 function norm(s){ return String(s||"").toLowerCase().replace(/[^a-z0-9\u0900-\u097f\s+./-]/gi," ").replace(/\s+/g," ").trim(); }
 
 var VERIFIED = {items:[]};
@@ -18202,7 +18826,7 @@ white-space:nowrap;overflow:hidden;text-overflow:ellipsis
 #nsl-sec-badge.bad{border-color:rgba(248,113,113,.5);color:#fca5a5}
 #nsl-sec-badge.ok{border-color:rgba(52,211,153,.45);color:#6ee7b7}
 </style>
-<div id="nsl-sec-badge" role="status" title="Security self-check">Security v11.0 · checking…</div>
+<div id="nsl-sec-badge" role="status" title="Security self-check">Security v11.5 · checking…</div>
 <script id="nsl-p6-sec-badge">
 (function(){
   "use strict";
@@ -18853,7 +19477,7 @@ box-shadow:0 24px 90px rgba(0,0,0,.55); font-family:system-ui,sans-serif;
 <div aria-hidden="true" id="nsl-v86-security-dashboard">
 <div aria-labelledby="nsl-v86-title" aria-modal="true" id="nsl-v86-security-card" role="dialog">
 <h2 id="nsl-v86-title" style="margin:0">Owner Security Dashboard</h2>
-<div style="font-size:12px;opacity:.7">NIL SparkLab v11.0 • private security health view</div>
+<div style="font-size:12px;opacity:.7">NIL SparkLab v11.5 • private security health view</div>
 <div class="nsl-v86-statgrid">
 <div class="nsl-v86-stat">Security score<strong id="nsl-v86-score">—</strong></div>
 <div class="nsl-v86-stat">Passed<strong id="nsl-v86-passed">—</strong></div>
@@ -20028,6 +20652,15 @@ position:fixed;inset:0;z-index:12350;background:rgba(2,6,23,.85);
 display:none;align-items:center;justify-content:center;padding:14px
 }
 #nsl-class-panel.open,#nsl-cam-panel.open,#nsl-adapt-panel.open,#nsl-twin-panel.open{display:flex}
+#nsl-gallery-panel{
+position:fixed;inset:0;z-index:12350;background:rgba(2,6,23,.85);
+display:none;align-items:center;justify-content:center;padding:14px
+}
+#nsl-gallery-panel.open{display:flex}
+.nsl-gallery-row{border-bottom:1px solid #1e293b;padding:8px 0;font-size:12px;}
+.nsl-gallery-row .title{font-weight:600;color:#e2e8f0;}
+.nsl-gallery-row .meta{color:#64748b;font-size:11px;margin-top:2px;}
+.nsl-gallery-row button{margin-top:4px;font-size:11px;padding:2px 8px;}
 .nsl-modal-card{
 width:min(96vw,480px);max-height:90vh;overflow:auto;background:#0b1220;
 border:1px solid rgba(34,211,238,.3);border-radius:18px;padding:16px
@@ -20082,6 +20715,24 @@ box-shadow:0 20px 40px rgba(0,0,0,.4)
 <button id="nsl-class-close" type="button">Close</button>
 </div>
 <p id="nsl-class-status" style="margin-top:10px;color:#67e8f9">Idle</p>
+<div style="border-top:1px solid #334155;margin-top:10px;padding-top:10px;">
+<div style="font-weight:600;margin-bottom:6px;">👨‍🏫 Teacher Dashboard (cross-device)</div>
+<p style="font-size:11px;color:#94a3b8;margin-bottom:6px;">Students apna naam bharke "Send my status" dabayein (apne-apne phone se) — teacher yahan sabka circuit health, last quiz aur streak ek jagah dekh sakta hai. Ye same room code use karta hai.</p>
+<label style="font-size:11px;color:#67e8f9">Aapka naam (student ke liye)</label>
+<input id="nsl-class-student-name" placeholder="e.g. Rahul" type="text">
+<div style="margin-top:6px;">
+<button id="nsl-class-send-status" type="button">📤 Send my status</button>
+<button id="nsl-class-dashboard-open" type="button">📊 Teacher dashboard</button>
+</div>
+<div hidden="" id="nsl-class-dashboard" style="margin-top:10px;">
+<div style="display:flex;justify-content:space-between;align-items:center;">
+<span style="font-size:11px;color:#94a3b8;">Live roster</span>
+<button id="nsl-class-dashboard-refresh" style="font-size:11px;padding:2px 8px;" type="button">🔄 Refresh</button>
+</div>
+<div id="nsl-class-roster" style="margin-top:6px;max-height:220px;overflow-y:auto;"></div>
+</div>
+<p id="nsl-class-dash-status" style="margin-top:6px;color:#94a3b8;font-size:11px;"></p>
+</div>
 </div></div>
 <div id="nsl-cam-panel"><div class="nsl-modal-card">
 <h3>📷 Circuit from photo</h3>
@@ -21373,6 +22024,7 @@ window.NilSparkLabStudyKB={
   version:"1.7",
   answer:answer,
   topics:function(){ return (DATA.topics||[]).map(function(t){return t.title;}); },
+  topicsWithIds:function(){ return (DATA.topics||[]).map(function(t){return {id:t.id,title:t.title};}); },
   resetQuiz:function(){ quizState=null; },
   find:find,
   getScores:readScores,
@@ -26633,7 +27285,7 @@ window.NilSparkLabSafeWifiV1013={
   };
 
   function toast(m){try{if(typeof window.nslV575Toast==='function')return window.nslV575Toast(m);}catch(_){ }try{if(typeof window.toast==='function')return window.toast(m);}catch(_){ }console.info("NilSparkLab:",m);}
-  function escapeHtml(s){return String(s||"").replace(/[&<>\"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\\\"":"&quot;"}[c]||c;});}
+  function escapeHtml(s){return String(s||"").replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]||c;});}
   function close(id){var x=document.getElementById(id);if(x)x.remove();}
   function getInput(){return document.getElementById("nsl-sa-input");}
   function runAssistant(q){
@@ -26900,7 +27552,7 @@ window.NilSparkLabSafeWifiV1013={
 (function(){
   "use strict";
   var lastTap=0;
-  function esc(s){return String(s||"").replace(/[&<>\"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]||c;});}
+  function esc(s){return String(s||"").replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]||c;});}
   function toast(m){try{if(typeof window.nslV575Toast==='function')return window.nslV575Toast(m);}catch(_){}try{if(typeof window.toast==='function')return window.toast(m);}catch(_){}console.info("NilSparkLab:",m);}
   function closeView(){var m=document.getElementById('nsl-v1022-diagram-view');if(m)m.remove();}
   function showSectionSafe(id){
@@ -27633,7 +28285,7 @@ window.NilSparkLabSafeWifiV1013={
 </style>
 <script id="nil-v49-simulation-assistant">
 (function(){'use strict';
- function esc(x){return String(x==null?'':x).replace(/[&<>\"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c];});}
+ function esc(x){return String(x==null?'':x).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
  function fmt(n,d){n=Number(n);return Number.isFinite(n)?n.toFixed(d):'0';}
  function sim(){return window.NILSparkLabLastSimulation||null;}
  function state(){try{return window.NILSparkLabCircuitStateBridge&&window.NILSparkLabCircuitStateBridge.getState?window.NILSparkLabCircuitStateBridge.getState():null}catch(_){return null}}
@@ -27850,6 +28502,11 @@ window.NilSparkLabSafeWifiV1013={
 <script src="js/assistant/assistant-agentic.js"></script>
 <script src="js/assistant/assistant-tool-router.js"></script>
 <script src="js/assistant/assistant-citations.js"></script>
+<script src="js/engagement/streak-reminder.js"></script>
+<script src="js/sync/progress-sync.js"></script>
+<script src="js/study/adaptive-srs.js"></script>
+<script src="js/classroom/teacher-dashboard.js"></script>
+<script src="js/gallery/circuit-gallery.js"></script>
 <script id="nil-v88-citation-integration">
 (function(){
   'use strict';
