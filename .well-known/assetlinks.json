@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "in.nilsparklab.app",
+      "sha256_cert_fingerprints": [
+        "B2:87:E3:7A:97:70:20:16:35:49:35:97:35:86:11:67:7F:12:7B:6D:83:3C:BE:2D:A5:DB:CA:0D:EB:E8:EB:1B"
+      ]
+    }
+  }
+]
