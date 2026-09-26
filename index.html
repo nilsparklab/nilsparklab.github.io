@@ -316,7 +316,7 @@
 })();
 </script>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; frame-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https: data:; script-src 'self' 'unsafe-inline' https://unpkg.com; connect-src 'self' https://*.workers.dev; media-src 'self' https: blob:; worker-src 'self' blob:; upgrade-insecure-requests"/>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; frame-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https: data:; script-src 'self' 'unsafe-inline' https://unpkg.com; connect-src 'self' https://nilsparklab.github.io https://*.workers.dev; media-src 'self' https: blob:; worker-src 'self' blob:; upgrade-insecure-requests"/>
 <style id="nsl-dialog-core-style">
 .nsl-dialog-backdrop{position:fixed;inset:0;z-index:2147483646;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(2,6,23,.72);backdrop-filter:blur(13px) saturate(120%);-webkit-backdrop-filter:blur(13px) saturate(120%);animation:nslDialogFade .16s ease-out}
 .nsl-dialog-card{width:min(460px,calc(100vw - 28px));max-height:min(88vh,650px);overflow:auto;background:linear-gradient(180deg,rgba(15,23,42,.98),rgba(5,11,27,.99));color:#e2e8f0;border:1px solid rgba(34,211,238,.22);border-radius:20px;box-shadow:0 30px 90px rgba(0,0,0,.62),0 0 0 1px rgba(15,23,42,.8),0 0 34px rgba(34,211,238,.06);padding:0;font-family:inherit;animation:nslDialogIn .2s cubic-bezier(.22,1,.36,1)}
@@ -3187,8 +3187,9 @@ animation:nslHeroIn .5s cubic-bezier(.22,1,.36,1) both;
 #nsl-update-banner{width:100%;background:linear-gradient(90deg,#0e7490,#0891b2);box-shadow:0 2px 10px rgba(0,0,0,.35);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;animation:nslUpdateBannerIn .25s ease-out}
 #nsl-update-banner .nsl-update-banner-inner{display:flex;align-items:center;gap:10px;padding:8px 14px;max-width:900px;margin:0 auto;flex-wrap:wrap}
 #nsl-update-banner .nsl-update-banner-text{color:#ecfeff;font-size:12.5px;font-weight:600;flex:1 1 auto}
-#nsl-update-banner .nsl-update-banner-btn{background:#022c3a;color:#67e8f9;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;text-decoration:none;border:1px solid rgba(103,232,249,.4);white-space:nowrap}
+#nsl-update-banner .nsl-update-banner-btn{background:#022c3a;color:#67e8f9;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;text-decoration:none;border:1px solid rgba(103,232,249,.4);white-space:nowrap;cursor:pointer;font-family:inherit}
 #nsl-update-banner .nsl-update-banner-btn:hover{background:#04384a}
+#nsl-update-banner .nsl-update-banner-btn[disabled]{opacity:.7;cursor:default}
 #nsl-update-banner .nsl-update-banner-close{background:transparent;border:none;color:#ecfeff;font-size:18px;line-height:1;cursor:pointer;padding:0 6px;opacity:.85}
 #nsl-update-banner .nsl-update-banner-close:hover{opacity:1}
 @keyframes nslUpdateBannerIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
@@ -7247,14 +7248,13 @@ Score: <span class="font-bold" id="quiz-score">0</span>
       const vBendCounts = {};
       const hBendCounts = {};
 
-      svgLayer.innerHTML = `
-        <defs>
-          <filter id="wire-glow-builder" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="2" result="blur" />
-            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-          </filter>
-        </defs>
-      ` + builderWires.map(w => {
+      // Each wire gets its OWN glow filter with an explicit region (userSpaceOnUse).
+      // A shared filter using the default objectBoundingBox region made any
+      // perfectly straight wire (same x or same y at both ends) vanish: its
+      // bounding box has zero width/height, so the filter region was empty and
+      // nothing was drawn. The padding covers the glow, curve bulges and the
+      // sideways nudge given to overlapping orthogonal wires.
+      svgLayer.innerHTML = builderWires.map((w, wi) => {
         const p1 = getTerminalCenter(w.from.compId, w.from.term);
         const p2 = getTerminalCenter(w.to.compId, w.to.term);
 
@@ -7303,14 +7303,23 @@ Score: <span class="font-bold" id="quiz-score">0</span>
           pathData = `M ${p1.x} ${p1.y} C ${p1.x + dx} ${p1.y}, ${p2.x - dx} ${p2.y}, ${p2.x} ${p2.y}`;
         }
 
+        const fpad = 40 + Math.max(Math.abs(p2.x - p1.x), Math.abs(p2.y - p1.y)) * 0.6 + builderWires.length * 6;
+        const fx = (Math.min(p1.x, p2.x) - fpad).toFixed(1), fy = (Math.min(p1.y, p2.y) - fpad).toFixed(1);
+        const fw = (Math.abs(p2.x - p1.x) + 2 * fpad).toFixed(1), fh = (Math.abs(p2.y - p1.y) + 2 * fpad).toFixed(1);
+        const glowId = `wire-glow-builder-${wi}`;
+
         // Small joint dots at each elbow (suggestion 3) — orthogonal mode only.
         const jointDots = joints.map(j => `<circle cx="${j.x}" cy="${j.y}" r="2.5" fill="${w.color || '#22d3ee'}" class="pointer-events-none" />`).join('');
 
         return `
           <g class="cursor-pointer group pointer-events-auto" onclick="deleteWire('${w.id}')">
             <title>Wire: ${w.from.term} ➔ ${w.to.term} | Telemetry: ${isSimRunning ? `${vText} Active` : '0V Idle'}</title>
+            <filter id="${glowId}" filterUnits="userSpaceOnUse" x="${fx}" y="${fy}" width="${fw}" height="${fh}">
+              <feGaussianBlur stdDeviation="2" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
             <path d="${pathData}" stroke="transparent" stroke-width="16" fill="none" />
-            <path d="${pathData}" stroke="${w.color || '#22d3ee'}" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" class="group-hover:stroke-rose-400 transition-all" filter="url(#wire-glow-builder)"/>
+            <path d="${pathData}" stroke="${w.color || '#22d3ee'}" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" class="group-hover:stroke-rose-400 transition-all" filter="url(#${glowId})"/>
             ${jointDots}
             ${isSimRunning ? `
               <path d="${pathData}" stroke="#ffffff" stroke-width="2" stroke-dasharray="3, 8" fill="none" class="animate-flow-fwd opacity-90" />
@@ -7812,7 +7821,9 @@ Score: <span class="font-bold" id="quiz-score">0</span>
       const sim = window.NILSparkLabLastSimulation;
       const iop = sim && sim.source === 'builder-simulation' ? Number(sim.current) || 0 : 0;
       let opLine = '';
-      if (iop > 0) {
+      // A resistor whose loop-current drop would exceed the graph's voltage range
+      // isn't in that loop (e.g. a spare / parallel part) -> show no operating point.
+      if (iop > 0 && (m.kind !== 'ohm' || iop * m.r <= md.X * 1.02)) {
         const vop = m.kind === 'ohm' ? iop * m.r : m.vf;
         opLine = `\u25cf ${vop.toFixed(2)} V @ ${fmtI(iop)}`;
         // small tolerance so a point sitting exactly on the range edge still shows
@@ -7836,6 +7847,7 @@ Score: <span class="font-bold" id="quiz-score">0</span>
     }
 
     function nslDrawDmmGraph() {
+      if (document.hidden) return; // no point redrawing while the app is in the background
       if (nslDmmView === 'iv') nslDrawDmmIV();
       else if (nslDmmView === 'wave') nslDrawDmmWave();
     }
@@ -29512,6 +29524,8 @@ color:#5b6b84;
   const VERSION_CHECK_URL = "https://nilsparklab.github.io/version.json";
   const DISMISS_KEY = "nsl-update-dismissed-version";
   const CHECK_DELAY_MS = 1500; // let the app finish its own startup first
+  const RECHECK_MS = 5 * 60 * 1000; // re-check when the app comes back to the foreground
+  let lastCheckAt = 0;
 
   function compareVersions(a, b) {
     const pa = String(a).split(".").map(n => parseInt(n, 10) || 0);
@@ -29524,6 +29538,57 @@ color:#5b6b84;
     return 0;
   }
 
+  // Installed app / live site (same origin as the update URL) can update in
+  // place; an old downloaded copy (file:// or content://) can only be sent to
+  // the live site, so it keeps the plain "Update" link.
+  function canUpdateInPlace(url) {
+    try {
+      return 'serviceWorker' in navigator && new URL(url).origin === location.origin;
+    } catch (_) { return false; }
+  }
+
+  let updating = false;
+  // Fetches the new service worker (which re-downloads every precached file),
+  // waits for it to take over, then reloads. Falls back to clearing this
+  // app's caches if the worker itself didn't change. Always ends in a reload,
+  // even on errors, so the button can never leave the app stuck.
+  async function applyUpdateNow(btn) {
+    if (updating) return;
+    updating = true;
+    if (btn) { btn.disabled = true; btn.textContent = 'Updating…'; }
+    let newWorker = false;
+    try {
+      const reg = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration() : null;
+      if (reg) {
+        let activated = null;
+        reg.addEventListener('updatefound', () => {
+          newWorker = true;
+          const w = reg.installing;
+          activated = new Promise(resolve => {
+            if (!w || w.state === 'activated') { resolve(); return; }
+            w.addEventListener('statechange', () => {
+              if (w.state === 'activated' || w.state === 'redundant') resolve();
+            });
+          });
+        });
+        await Promise.race([
+          (async () => { await reg.update(); if (activated) await activated; })(),
+          new Promise(resolve => setTimeout(resolve, 15000)) // slow networks need a while to precache
+        ]);
+      }
+      if (!newWorker && window.caches && caches.keys) {
+        // The new worker deletes the old caches itself when it activates;
+        // only do it by hand when there was no new worker.
+        const keys = await caches.keys();
+        await Promise.all(keys.filter(k => k.startsWith('nil-sparklab-')).map(k => caches.delete(k)));
+      }
+      // Refresh the page in the browser's HTTP cache too, so the reload below
+      // can't be served a stale copy of index.html.
+      try { await fetch(location.pathname + location.search, { cache: 'reload', headers: { Accept: 'text/html' } }); } catch (_) {}
+    } catch (_) { /* fall through to a plain reload */ }
+    location.reload();
+  }
+
   function showUpdateBanner(remote, localVersion) {
     if (document.getElementById('nsl-update-banner')) return;
     const banner = document.createElement('div');
@@ -29531,13 +29596,18 @@ color:#5b6b84;
     banner.setAttribute('role', 'status');
     const safeVersion = String(remote.version).replace(/[<>&"]/g, '');
     const safeUrl = /^https:\/\/nilsparklab\.github\.io\//.test(remote.url || '') ? remote.url : 'https://nilsparklab.github.io/';
+    const updateControl = canUpdateInPlace(safeUrl)
+      ? '<button class="nsl-update-banner-btn" id="nsl-update-now" type="button">Update now</button>'
+      : '<a class="nsl-update-banner-btn" href="' + safeUrl + '" target="_blank" rel="noopener noreferrer">Update</a>';
     banner.innerHTML =
       '<div class="nsl-update-banner-inner">' +
         '<span class="nsl-update-banner-text">⚡ New version v' + safeVersion + ' is available' + (localVersion ? ' (you have v' + String(localVersion).replace(/[<>&"]/g, '') + ')' : '') + '</span>' +
-        '<a class="nsl-update-banner-btn" href="' + safeUrl + '" target="_blank" rel="noopener noreferrer">Update</a>' +
+        updateControl +
         '<button class="nsl-update-banner-close" type="button" aria-label="Dismiss">×</button>' +
       '</div>';
     document.body.insertBefore(banner, document.body.firstChild);
+    const nowBtn = banner.querySelector('#nsl-update-now');
+    if (nowBtn) nowBtn.addEventListener('click', () => applyUpdateNow(nowBtn));
     const closeBtn = banner.querySelector('.nsl-update-banner-close');
     if (closeBtn) closeBtn.addEventListener('click', () => {
       try { localStorage.setItem(DISMISS_KEY, remote.version); } catch (_) {}
@@ -29549,6 +29619,7 @@ color:#5b6b84;
     try { if (navigator.onLine === false) return; } catch (_) {}
     const localVersion = document.body.dataset.nilSparklabVersion;
     if (!localVersion) return;
+    lastCheckAt = Date.now();
     fetch(VERSION_CHECK_URL, { cache: 'no-store' })
       .then(res => res.ok ? res.json() : null)
       .then(data => {
@@ -29563,6 +29634,13 @@ color:#5b6b84;
   }
 
   setTimeout(checkForAppUpdate, CHECK_DELAY_MS);
+  // An installed app can stay open (or in the background) for days, so also
+  // look again whenever it becomes visible, and every 30 minutes while open.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && Date.now() - lastCheckAt > RECHECK_MS) checkForAppUpdate();
+  });
+  setInterval(() => { if (document.visibilityState === 'visible') checkForAppUpdate(); }, 30 * 60 * 1000);
+  window.NSLCheckForUpdate = checkForAppUpdate; // manual / debugging hook
 })();
 </script>
 </body>
